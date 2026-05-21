@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Camera,
+  Check,
   FileImage,
   Grid3x3,
   Download,
@@ -53,6 +54,10 @@ export default function GuestEvent() {
   const [lightbox, setLightbox] = useState<PhotoEntry | null>(null);
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [uploadNotice, setUploadNotice] = useState('');
+  const [uploadBanner, setUploadBanner] = useState<{
+    kind: 'loading' | 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -241,27 +246,45 @@ export default function GuestEvent() {
     }
   };
 
-  const confirmPendingUpload = async () => {
-    const blob = pendingBlobRef.current;
-    if (!pin || !blob) return;
+  const uploadSuccessText = (pendingModeration?: boolean) =>
+    pendingModeration
+      ? 'Фото отправлено — появится в ленте после одобрения.'
+      : 'Фото загружено и уже в общей ленте.';
+
+  const submitPhotoBlob = async (blob: Blob, opts?: { afterCamera?: boolean }) => {
+    if (!pin) return;
     if (!eventPublic?.uploadsOpen) {
       setShootError(eventPublic?.uploadsClosedReason || 'Загрузка закрыта');
       return;
     }
     setUploading(true);
     setShootError('');
+    setUploadBanner({ kind: 'loading', text: 'Загрузка фото…' });
     try {
       const { pendingModeration } = await uploadPhoto(slug, pin, blob, author.trim() || undefined);
-      discardPending();
+      if (opts?.afterCamera) discardPending();
       setAuthor('');
-      setUploadNotice(pendingModeration ? 'Фото на модерации — появится в ленте после одобрения.' : '');
+      const text = uploadSuccessText(pendingModeration);
+      setUploadNotice(text);
+      setUploadBanner({ kind: 'success', text });
       await loadFeed();
-      setTab('feed');
+      window.setTimeout(() => {
+        setTab('feed');
+        setUploadBanner(null);
+      }, 1600);
     } catch (e) {
-      setShootError(e instanceof Error ? e.message : 'Ошибка');
+      const msg = e instanceof Error ? e.message : 'Не удалось загрузить';
+      setShootError(msg);
+      setUploadBanner({ kind: 'error', text: msg });
     } finally {
       setUploading(false);
     }
+  };
+
+  const confirmPendingUpload = async () => {
+    const blob = pendingBlobRef.current;
+    if (!blob) return;
+    await submitPhotoBlob(blob, { afterCamera: true });
   };
 
   const triggerImageUpload = () => {
@@ -277,20 +300,10 @@ export default function GuestEvent() {
       if (!file) return;
       if (!isProbablyImageFile(file)) {
         setShootError('Нужен файл изображения');
+        setUploadBanner({ kind: 'error', text: 'Нужен файл изображения' });
         return;
       }
-      setUploading(true);
-      try {
-        const { pendingModeration } = await uploadPhoto(slug, pin, file, author || undefined);
-        setAuthor('');
-        setUploadNotice(pendingModeration ? 'Фото на модерации.' : '');
-        await loadFeed();
-        setTab('feed');
-      } catch (e) {
-        setShootError(e instanceof Error ? e.message : 'Ошибка');
-      } finally {
-        setUploading(false);
-      }
+      await submitPhotoBlob(file);
     };
     input.click();
   };
@@ -488,15 +501,40 @@ export default function GuestEvent() {
               className="w-full border border-line px-3 py-2"
               maxLength={80}
             />
-            {shootError && <p className="text-sm text-red-700">{shootError}</p>}
+            {uploadBanner && (
+              <p
+                className={`text-sm px-3 py-3 text-center border flex items-center justify-center gap-2 ${
+                  uploadBanner.kind === 'loading'
+                    ? 'bg-paper border-line text-muted'
+                    : uploadBanner.kind === 'success'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                      : 'bg-red-50 border-red-200 text-red-800'
+                }`}
+                role="status"
+              >
+                {uploadBanner.kind === 'loading' && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
+                {uploadBanner.kind === 'success' && <Check className="h-4 w-4 shrink-0" />}
+                {uploadBanner.text}
+              </p>
+            )}
+            {shootError && !uploadBanner && <p className="text-sm text-red-700">{shootError}</p>}
             <button
               type="button"
               disabled={uploading || !eventPublic.uploadsOpen}
               onClick={() => triggerImageUpload()}
-              className="w-full border border-ink py-4 text-xs uppercase flex justify-center gap-2"
+              className="w-full border border-ink py-4 text-xs uppercase flex justify-center gap-2 disabled:opacity-60"
             >
-              <FileImage className="h-5 w-5" />
-              Выбрать фото
+              {uploading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Загрузка…
+                </>
+              ) : (
+                <>
+                  <FileImage className="h-5 w-5" />
+                  Выбрать фото
+                </>
+              )}
             </button>
           </div>
         )}

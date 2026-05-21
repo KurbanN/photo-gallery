@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { ensureLegacyEvent, verifyEventPin, eventIsUploadAllowed } from '../events-db.js';
-import { pinAttemptLimiter, uploadLimiter } from '../middleware.js';
+import { uploadLimiter } from '../middleware.js';
 import {
   deletePhotoForEvent,
   downloadPhotoBuffer,
@@ -37,7 +37,7 @@ export function legacyRouter(): Router {
     return ev;
   }
 
-  router.get('/photos', pinAttemptLimiter, async (req, res) => {
+  router.get('/photos', async (req, res) => {
     const pin = req.header('x-event-pin');
     try {
       const event = await legacyEvent();
@@ -99,7 +99,7 @@ export function legacyRouter(): Router {
     },
   );
 
-  router.get('/photos/:id/download', pinAttemptLimiter, async (req, res) => {
+  router.get('/photos/:id/download', async (req, res) => {
     const pin = req.header('x-event-pin');
     try {
       const event = await legacyEvent();
@@ -121,7 +121,7 @@ export function legacyRouter(): Router {
     }
   });
 
-  router.delete('/photos/:id', pinAttemptLimiter, async (req, res) => {
+  router.delete('/photos/:id', async (req, res) => {
     const pin = req.header('x-event-pin');
     try {
       const event = await legacyEvent();

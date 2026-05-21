@@ -6,7 +6,7 @@ import {
   getEventBySlug,
   verifyEventPin,
 } from '../events-db.js';
-import { pinAttemptLimiter, uploadLimiter } from '../middleware.js';
+import { uploadLimiter } from '../middleware.js';
 import {
   downloadPhotoBuffer,
   listPhotosForGuest,
@@ -64,7 +64,7 @@ export function guestRouter(): Router {
     }
   });
 
-  router.get('/:slug/photos', pinAttemptLimiter, async (req, res) => {
+  router.get('/:slug/photos', async (req, res) => {
     const pin = req.header('x-event-pin');
     try {
       const event = await getEventBySlug(req.params.slug);
@@ -84,7 +84,7 @@ export function guestRouter(): Router {
     }
   });
 
-  router.get('/:slug/photos/:id/download', pinAttemptLimiter, async (req, res) => {
+  router.get('/:slug/photos/:id/download', async (req, res) => {
     const pin = req.header('x-event-pin');
     try {
       const event = await getEventBySlug(req.params.slug);
@@ -114,7 +114,6 @@ export function guestRouter(): Router {
   router.post(
     '/:slug/upload',
     uploadLimiter,
-    pinAttemptLimiter,
     (req, res, next) => {
       upload.single('photo')(req, res, (err: unknown) => {
         if (err) {
