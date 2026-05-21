@@ -4,7 +4,6 @@ import {
   Camera,
   FileImage,
   Grid3x3,
-  ImagePlus,
   Download,
   Loader2,
   LogOut,
@@ -265,18 +264,18 @@ export default function GuestEvent() {
     }
   };
 
-  const triggerImageUpload = (opts: { accept: string; validateAsImage: boolean }) => {
+  const triggerImageUpload = () => {
     if (!pin || !eventPublic?.uploadsOpen) {
       setShootError(eventPublic?.uploadsClosedReason || 'Загрузка закрыта');
       return;
     }
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = opts.accept;
+    input.accept = '*/*';
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-      if (opts.validateAsImage && !isProbablyImageFile(file)) {
+      if (!isProbablyImageFile(file)) {
         setShootError('Нужен файл изображения');
         return;
       }
@@ -493,19 +492,11 @@ export default function GuestEvent() {
             <button
               type="button"
               disabled={uploading || !eventPublic.uploadsOpen}
-              onClick={() => triggerImageUpload({ accept: 'image/*', validateAsImage: false })}
+              onClick={() => triggerImageUpload()}
               className="w-full border border-ink py-4 text-xs uppercase flex justify-center gap-2"
             >
-              <ImagePlus className="h-5 w-5" /> Из галереи
-            </button>
-            <button
-              type="button"
-              disabled={uploading || !eventPublic.uploadsOpen}
-              onClick={() => triggerImageUpload({ accept: '*/*', validateAsImage: true })}
-              className="w-full border border-ink py-4 text-xs"
-            >
-              <FileImage className="inline h-5 w-5 mr-2" />
-              Как файл (лучшее качество)
+              <FileImage className="h-5 w-5" />
+              Выбрать фото
             </button>
           </div>
         )}
