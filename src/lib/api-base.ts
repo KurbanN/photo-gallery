@@ -1,10 +1,18 @@
+import { getRuntimeConfig } from './runtime-config';
+
 /**
  * Базовый URL API.
  * - dev: пусто → Vite проксирует /api на localhost:8787
- * - prod (GitHub Pages): обязателен VITE_API_BASE_URL при сборке (отдельный хост Express)
+ * - prod: VITE_API_BASE_URL при сборке или apiBaseUrl в app-config.json
  */
 export function getApiBaseUrl(): string {
-  return import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, '') ?? '';
+  const fromEnv = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, '');
+  if (fromEnv) return fromEnv;
+  try {
+    return getRuntimeConfig().apiBaseUrl ?? '';
+  } catch {
+    return '';
+  }
 }
 
 export function apiUrl(path: string): string {
@@ -21,11 +29,10 @@ export function isApiConfigured(): boolean {
 
 export function apiNotConfiguredMessage(): string {
   if (import.meta.env.DEV) {
-    return 'Запустите `npm run dev` (фронт + сервер на :8787).';
+    return 'Запустите `npm run dev` (фронт + сервер :8787).';
   }
   return (
-    'API не настроен для продакшена. В GitHub: Settings → Variables → ' +
-    'VITE_API_BASE_URL = URL вашего сервера (Render/Fly), затем пересоберите Pages. ' +
+    'API не настроен. Укажите apiBaseUrl в public/app-config.json или VITE_API_BASE_URL при сборке. ' +
     'См. .github/DEPLOY.md'
   );
 }

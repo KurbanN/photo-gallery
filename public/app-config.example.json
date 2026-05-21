@@ -1,0 +1,5 @@
+{
+  "supabaseUrl": "https://YOUR_PROJECT.supabase.co",
+  "supabasePublishableKey": "sb_publishable_...",
+  "apiBaseUrl": "https://your-api.example.com"
+}

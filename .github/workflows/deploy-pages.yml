@@ -36,12 +36,15 @@ jobs:
 
       - run: npm ci
 
-      - name: Check VITE_API_BASE_URL
+      - name: Check build config
         run: |
+          if [ -z "${{ vars.VITE_SUPABASE_URL }}" ] || [ -z "${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}" ]; then
+            echo "::notice::VITE_SUPABASE_* не в GitHub Variables — используется public/app-config.json из репозитория."
+          fi
           if [ -z "${{ vars.VITE_API_BASE_URL }}" ]; then
-            echo "::warning::VITE_API_BASE_URL не задан — на сайте запросы к /api дадут 404. Задайте URL API (Render) в Settings → Variables."
+            echo "::notice::VITE_API_BASE_URL не задан — API URL из public/app-config.json (если есть)."
           else
-            echo "API base: ${{ vars.VITE_API_BASE_URL }}"
+            echo "API base (env): ${{ vars.VITE_API_BASE_URL }}"
           fi
 
       - name: Build static site
