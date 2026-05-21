@@ -56,7 +56,6 @@ export async function createEvent(payload: {
   slug?: string;
   plan?: string;
   endsAt?: string;
-  moderationEnabled?: boolean;
 }): Promise<{ event: EventRow; pin: string; guestUrl: string }> {
   const res = await fetch(apiUrl('/api/v1/organizer/events'), {
     method: 'POST',
@@ -103,22 +102,6 @@ export async function listEventPhotos(id: string): Promise<OrgPhoto[]> {
   const body = await res.json();
   if (!res.ok) throw new Error(body.error || 'Ошибка');
   return body.photos ?? [];
-}
-
-export async function moderatePhoto(
-  eventId: string,
-  photoId: string,
-  status: 'approved' | 'rejected',
-): Promise<void> {
-  const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/photos/${photoId}`), {
-    method: 'PATCH',
-    headers: await authHeaders(),
-    body: JSON.stringify({ status }),
-  });
-  if (!res.ok) {
-    const body = await res.json();
-    throw new Error(body.error || 'Ошибка');
-  }
 }
 
 export async function deleteOrgPhoto(eventId: string, photoId: string): Promise<void> {

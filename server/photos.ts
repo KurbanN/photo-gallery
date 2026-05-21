@@ -42,11 +42,7 @@ export async function listPhotosForGuest(event: EventRow): Promise<PhotoEntry[]>
     .select('id, storage_path, created_at, author, status')
     .eq('event_id', event.id)
     .order('created_at', { ascending: false });
-  if (event.moderation_enabled) {
-    q = q.eq('status', 'approved');
-  } else {
-    q = q.neq('status', 'rejected');
-  }
+  q = q.neq('status', 'rejected');
   const { data, error } = await q;
   if (error) throw error;
   return ((data ?? []) as PhotoRow[]).map(rowToEntry);
@@ -80,7 +76,7 @@ export async function uploadPhotoForEvent(
   const supabase = getSupabase();
   const bucket = getBucket();
   const contentType = mimetype.startsWith('image/') ? mimetype : mimeFromFilename(ext);
-  const status: PhotoStatus = event.moderation_enabled ? 'pending' : 'approved';
+  const status: PhotoStatus = 'approved';
 
   const { error: upErr } = await supabase.storage.from(bucket).upload(storagePath, buffer, {
     contentType,
@@ -120,20 +116,6 @@ export async function deletePhotoForEvent(eventId: string, photoId: string): Pro
   const { error: delErr } = await supabase.from('photos').delete().eq('id', photoId);
   if (delErr) throw delErr;
   await supabase.storage.from(bucket).remove([row.storage_path]).catch(() => {});
-}
-
-export async function moderatePhoto(
-  eventId: string,
-  photoId: string,
-  status: 'approved' | 'rejected',
-): Promise<void> {
-  const supabase = getSupabase();
-  const { error } = await supabase
-    .from('photos')
-    .update({ status })
-    .eq('id', photoId)
-    .eq('event_id', eventId);
-  if (error) throw error;
 }
 
 export async function downloadPhotoBuffer(

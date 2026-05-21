@@ -99,7 +99,7 @@ export async function createEvent(input: CreateEventInput): Promise<EventRow> {
     status: 'active' as const,
     plan,
     photo_limit: planLimits.photoLimit,
-    moderation_enabled: input.moderationEnabled ?? planLimits.moderation,
+    moderation_enabled: false,
     starts_at: input.startsAt ?? null,
     ends_at: input.endsAt ?? null,
     settings: input.settings ?? {},

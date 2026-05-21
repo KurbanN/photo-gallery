@@ -50,7 +50,6 @@ export function guestRouter(): Router {
         pinRequired: event.pin_enabled,
         uploadsOpen: uploadCheck.ok,
         uploadsClosedReason: uploadCheck.reason,
-        moderationEnabled: event.moderation_enabled,
         settings: {
           welcomeTitle: settings.welcomeTitle ?? event.title,
           welcomeSubtitle: settings.welcomeSubtitle,
@@ -154,10 +153,7 @@ export function guestRouter(): Router {
           req.file.mimetype,
           authorRaw || undefined,
         );
-        res.status(201).json({
-          photo,
-          pendingModeration: event.moderation_enabled,
-        });
+        res.status(201).json({ photo });
       } catch (e) {
         if (e instanceof Error && e.message === 'PHOTO_LIMIT') {
           res.status(403).json({ error: 'Достигнут лимит фото для тарифа' });

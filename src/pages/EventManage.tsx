@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Check, Download, Loader2, Trash2, X } from 'lucide-react';
+import { Download, Loader2, Trash2 } from 'lucide-react';
 import { apiUrl } from '@/lib/api-base';
 import {
   deleteOrgPhoto,
@@ -8,7 +8,6 @@ import {
   endEvent,
   getEvent,
   listEventPhotos,
-  moderatePhoto,
   type OrgPhoto,
 } from '@/lib/organizer-api';
 import { createClient } from '@/lib/supabase/client';
@@ -108,49 +107,25 @@ export default function EventManage() {
       </div>
       {error && <p className="px-6 text-red-700 text-sm">{error}</p>}
       <section className="px-6 max-w-3xl mx-auto">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-muted mb-4">Модерация ({photos.length})</h2>
+        <h2 className="text-xs uppercase tracking-[0.2em] text-muted mb-4">Галерея ({photos.length})</h2>
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {photos.map((p) => (
             <li key={p.id} className="border border-line">
               <img src={p.url} alt="" className="aspect-square object-cover w-full" />
-              <div className="p-2 flex gap-1 text-[10px] uppercase">
-                {p.status === 'pending' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await moderatePhoto(id, p.id, 'approved');
-                        await load();
-                      }}
-                      className="flex-1 bg-ink text-paper py-1 flex justify-center"
-                    >
-                      <Check className="w-3 h-3" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await moderatePhoto(id, p.id, 'rejected');
-                        await load();
-                      }}
-                      className="flex-1 border border-line py-1 flex justify-center"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </>
-                )}
+              <div className="p-2">
                 <button
                   type="button"
                   onClick={async () => {
-                    if (!confirm('Удалить?')) return;
+                    if (!confirm('Удалить фото?')) return;
                     await deleteOrgPhoto(id, p.id);
                     await load();
                   }}
-                  className="flex-1 text-red-700 py-1 flex justify-center"
+                  className="w-full text-red-700 py-1 flex justify-center items-center gap-1 text-[10px] uppercase"
                 >
                   <Trash2 className="w-3 h-3" />
+                  Удалить
                 </button>
               </div>
-              {p.status && <p className="px-2 pb-1 text-[10px] text-muted">{p.status}</p>}
             </li>
           ))}
         </ul>

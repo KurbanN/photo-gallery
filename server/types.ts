@@ -44,8 +44,8 @@ export type PhotoEntry = {
   status?: PhotoStatus;
 };
 
-export const PLAN_LIMITS: Record<EventPlan, { photoLimit: number; moderation: boolean }> = {
-  lite: { photoLimit: 300, moderation: false },
-  party: { photoLimit: 2000, moderation: true },
-  premium: { photoLimit: 5000, moderation: true },
+export const PLAN_LIMITS: Record<EventPlan, { photoLimit: number }> = {
+  lite: { photoLimit: 300 },
+  party: { photoLimit: 2000 },
+  premium: { photoLimit: 5000 },
 };

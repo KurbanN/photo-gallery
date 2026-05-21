@@ -13,7 +13,6 @@ export type EventPublic = {
   pinRequired: boolean;
   uploadsOpen: boolean;
   uploadsClosedReason?: string;
-  moderationEnabled: boolean;
   settings: {
     welcomeTitle: string;
     welcomeSubtitle?: string;
@@ -96,7 +95,7 @@ export async function uploadPhoto(
   pin: string,
   blob: Blob,
   author?: string,
-): Promise<{ photo: PhotoEntry; pendingModeration?: boolean }> {
+): Promise<{ photo: PhotoEntry }> {
   assertApi();
   const form = new FormData();
   form.append('photo', blob, uploadFilename(blob));
@@ -109,11 +108,10 @@ export async function uploadPhoto(
   const body = (await res.json().catch(() => ({}))) as {
     photo?: PhotoEntry;
     error?: string;
-    pendingModeration?: boolean;
   };
   if (!res.ok) throw new Error(body.error || 'Ошибка загрузки');
   if (!body.photo) throw new Error('Некорректный ответ');
-  return { photo: body.photo, pendingModeration: body.pendingModeration };
+  return { photo: body.photo };
 }
 
 export async function downloadPhotoFile(slug: string, pin: string, photoId: string): Promise<Blob> {

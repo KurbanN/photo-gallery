@@ -22,7 +22,6 @@ export default function EventCreate() {
         slug: slug.trim() || undefined,
         plan,
         endsAt: endsAt || undefined,
-        moderationEnabled: plan !== 'lite',
       });
       setCreated({ pin: res.pin, guestUrl: res.guestUrl, id: res.event.id });
     } catch (err) {
@@ -83,7 +82,7 @@ export default function EventCreate() {
             className="w-full border border-line px-3 py-2 mt-1"
           >
             <option value="lite">Lite — 300 фото</option>
-            <option value="party">Party — 2000 фото, модерация</option>
+            <option value="party">Party — 2000 фото</option>
             <option value="premium">Premium — 5000 фото</option>
           </select>
         </div>

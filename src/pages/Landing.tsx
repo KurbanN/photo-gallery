@@ -32,7 +32,7 @@ export default function Landing() {
         <section className="mt-16 grid gap-6 text-left w-full text-sm text-muted">
           <div>
             <p className="text-ink font-medium mb-1">Для организаторов</p>
-            <p>Уникальная ссылка, PIN для гостей, QR для печати, модерация, архив ZIP.</p>
+            <p>Уникальная ссылка, PIN для гостей, QR для печати, архив ZIP.</p>
           </div>
           <div>
             <p className="text-ink font-medium mb-1">Тарифы</p>

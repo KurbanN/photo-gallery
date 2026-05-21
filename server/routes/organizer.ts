@@ -22,7 +22,6 @@ import {
   deletePhotoForEvent,
   downloadPhotoBuffer,
   listPhotosForOrganizer,
-  moderatePhoto,
 } from '../photos.js';
 import { generatePin } from '../pin.js';
 import type { EventPlan, EventSettings } from '../types.js';
@@ -61,7 +60,6 @@ export function organizerRouter(): Router {
         slug?: string;
         pin?: string;
         plan?: EventPlan;
-        moderationEnabled?: boolean;
         startsAt?: string;
         endsAt?: string;
         settings?: EventSettings;
@@ -74,7 +72,6 @@ export function organizerRouter(): Router {
         title,
         pin,
         plan: body.plan,
-        moderationEnabled: body.moderationEnabled,
         startsAt: body.startsAt ?? null,
         endsAt: body.endsAt ?? null,
         settings: body.settings,
@@ -118,7 +115,6 @@ export function organizerRouter(): Router {
         title?: string;
         status?: 'draft' | 'active' | 'ended' | 'archived';
         endsAt?: string | null;
-        moderationEnabled?: boolean;
         settings?: EventSettings;
         pin?: string;
       };
@@ -126,7 +122,6 @@ export function organizerRouter(): Router {
         title: body.title,
         status: body.status,
         ends_at: body.endsAt,
-        moderation_enabled: body.moderationEnabled,
         settings: body.settings,
         pin: body.pin,
       });
@@ -154,27 +149,6 @@ export function organizerRouter(): Router {
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: 'Ошибка' });
-    }
-  });
-
-  router.patch('/events/:id/photos/:photoId', async (req, res) => {
-    try {
-      const org = getOrganizer(req);
-      const event = await getEventById(req.params.id);
-      if (!event || !canAccessEvent(event, org)) {
-        res.status(404).json({ error: 'Не найдено' });
-        return;
-      }
-      const status = (req.body as { status?: string }).status;
-      if (status !== 'approved' && status !== 'rejected') {
-        res.status(400).json({ error: 'status: approved | rejected' });
-        return;
-      }
-      await moderatePhoto(event.id, req.params.photoId, status);
-      res.json({ ok: true });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: 'Ошибка модерации' });
     }
   });
 

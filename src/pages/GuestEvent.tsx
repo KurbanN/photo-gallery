@@ -246,11 +246,6 @@ export default function GuestEvent() {
     }
   };
 
-  const uploadSuccessText = (pendingModeration?: boolean) =>
-    pendingModeration
-      ? 'Фото отправлено — появится в ленте после одобрения.'
-      : 'Фото загружено и уже в общей ленте.';
-
   const submitPhotoBlob = async (blob: Blob, opts?: { afterCamera?: boolean }) => {
     if (!pin) return;
     if (!eventPublic?.uploadsOpen) {
@@ -261,10 +256,10 @@ export default function GuestEvent() {
     setShootError('');
     setUploadBanner({ kind: 'loading', text: 'Загрузка фото…' });
     try {
-      const { pendingModeration } = await uploadPhoto(slug, pin, blob, author.trim() || undefined);
+      await uploadPhoto(slug, pin, blob, author.trim() || undefined);
       if (opts?.afterCamera) discardPending();
       setAuthor('');
-      const text = uploadSuccessText(pendingModeration);
+      const text = 'Фото загружено и уже в общей ленте.';
       setUploadNotice(text);
       setUploadBanner({ kind: 'success', text });
       await loadFeed();
