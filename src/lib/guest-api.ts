@@ -1,10 +1,9 @@
 import { ApiRequestError } from './api';
+import { apiNotConfiguredMessage, apiUrl, isApiConfigured } from './api-base';
+import { parseApiJson } from './http';
 
-function apiUrl(path: string): string {
-  const raw = import.meta.env.VITE_API_BASE_URL?.trim() ?? '';
-  const prefix = raw.replace(/\/+$/, '');
-  const p = path.startsWith('/') ? path : `/${path}`;
-  return `${prefix}${p}`;
+function assertApi() {
+  if (!isApiConfigured()) throw new Error(apiNotConfiguredMessage());
 }
 
 export type EventPublic = {
@@ -56,21 +55,23 @@ export function apiHeaders(pin: string): HeadersInit {
 }
 
 export async function fetchEventPublic(slug: string): Promise<EventPublic> {
+  assertApi();
   const res = await fetch(apiUrl(`/api/v1/e/${encodeURIComponent(slug)}/public`));
-  const body = (await res.json().catch(() => ({}))) as EventPublic & { error?: string };
+  const body = await parseApiJson<EventPublic & { error?: string }>(res);
   if (!res.ok) throw new ApiRequestError(body.error || 'Мероприятие не найдено', res.status);
   return body;
 }
 
 export async function fetchPhotos(slug: string, pin: string): Promise<PhotoEntry[]> {
+  assertApi();
   const res = await fetch(apiUrl(`/api/v1/e/${encodeURIComponent(slug)}/photos`), {
     headers: apiHeaders(pin),
   });
-  const body = (await res.json().catch(() => ({}))) as {
+  const body = await parseApiJson<{
     photos?: PhotoEntry[];
     error?: string;
     hint?: string;
-  };
+  }>(res);
   if (!res.ok) {
     const msg = [body.error, body.hint].filter(Boolean).join(' ') || 'Не удалось загрузить ленту';
     throw new ApiRequestError(msg, res.status);
@@ -96,6 +97,7 @@ export async function uploadPhoto(
   blob: Blob,
   author?: string,
 ): Promise<{ photo: PhotoEntry; pendingModeration?: boolean }> {
+  assertApi();
   const form = new FormData();
   form.append('photo', blob, uploadFilename(blob));
   if (author?.trim()) form.append('author', author.trim());
@@ -115,6 +117,7 @@ export async function uploadPhoto(
 }
 
 export async function downloadPhotoFile(slug: string, pin: string, photoId: string): Promise<Blob> {
+  assertApi();
   const res = await fetch(
     apiUrl(`/api/v1/e/${encodeURIComponent(slug)}/photos/${encodeURIComponent(photoId)}/download`),
     { headers: apiHeaders(pin) },

@@ -3,9 +3,12 @@ export async function parseApiJson<T>(res: Response): Promise<T> {
   const text = await res.text();
   const trimmed = text.trim();
   if (trimmed.startsWith('<')) {
+    const onPages =
+      typeof location !== 'undefined' && location.hostname.endsWith('github.io');
     throw new Error(
-      'API недоступен. Запустите `npm run dev` (нужны и фронт, и сервер на порту 8787). ' +
-        'Если ошибка остаётся — закройте старый процесс на порту 8787 и перезапустите.',
+      onPages
+        ? 'API недоступен (404). Задайте VITE_API_BASE_URL в GitHub Variables и задеплойте Express (Render). См. .github/DEPLOY.md'
+        : 'API недоступен. Запустите `npm run dev` (фронт + сервер :8787) или задайте VITE_API_BASE_URL.',
     );
   }
   try {

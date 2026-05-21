@@ -1,13 +1,13 @@
 import { createClient } from './supabase/client';
+import { apiNotConfiguredMessage, apiUrl, isApiConfigured } from './api-base';
 import { parseApiJson } from './http';
 
-function apiUrl(path: string): string {
-  const raw = import.meta.env.VITE_API_BASE_URL?.trim() ?? '';
-  const prefix = raw.replace(/\/+$/, '');
-  return `${prefix}${path.startsWith('/') ? path : `/${path}`}`;
+function assertApi() {
+  if (!isApiConfigured()) throw new Error(apiNotConfiguredMessage());
 }
 
 async function authHeaders(): Promise<HeadersInit> {
+  assertApi();
   const supabase = createClient();
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -24,6 +24,7 @@ export type OrganizerProfile = {
 };
 
 export async function fetchMe(): Promise<OrganizerProfile> {
+  assertApi();
   const res = await fetch(apiUrl('/api/v1/organizer/me'), { headers: await authHeaders() });
   const body = await parseApiJson<{ profile?: OrganizerProfile; error?: string }>(res);
   if (!res.ok) throw new Error(body.error || 'Ошибка');

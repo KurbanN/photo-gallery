@@ -36,6 +36,14 @@ jobs:
 
       - run: npm ci
 
+      - name: Check VITE_API_BASE_URL
+        run: |
+          if [ -z "${{ vars.VITE_API_BASE_URL }}" ]; then
+            echo "::warning::VITE_API_BASE_URL не задан — на сайте запросы к /api дадут 404. Задайте URL API (Render) в Settings → Variables."
+          else
+            echo "API base: ${{ vars.VITE_API_BASE_URL }}"
+          fi
+
       - name: Build static site
         env:
           VITE_BASE_PATH: ${{ env.VITE_BASE_PATH }}

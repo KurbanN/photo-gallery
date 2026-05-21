@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Check, Download, Loader2, Trash2, X } from 'lucide-react';
+import { apiUrl } from '@/lib/api-base';
 import {
   deleteOrgPhoto,
   downloadQr,
@@ -48,9 +49,7 @@ export default function EventManage() {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     if (!token) return;
-    const raw = import.meta.env.VITE_API_BASE_URL?.trim() ?? '';
-    const prefix = raw.replace(/\/+$/, '');
-    const url = `${prefix}/api/v1/organizer/events/${id}/export.zip`;
+    const url = apiUrl(`/api/v1/organizer/events/${id}/export.zip`);
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
