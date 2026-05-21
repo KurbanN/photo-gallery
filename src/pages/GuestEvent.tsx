@@ -44,7 +44,6 @@ export default function GuestEvent() {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [pinLoading, setPinLoading] = useState(false);
-  const [consent, setConsent] = useState(false);
 
   const [tab, setTab] = useState<Tab>('shoot');
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
@@ -198,10 +197,6 @@ export default function GuestEvent() {
     e.preventDefault();
     if (!eventPublic) return;
     setPinError('');
-    if (!consent) {
-      setPinError('Подтвердите согласие на публикацию в общей ленте.');
-      return;
-    }
     const p = eventPublic.pinRequired ? pinInput.trim() : '';
     if (eventPublic.pinRequired && !p) {
       setPinError('Введите код');
@@ -362,17 +357,6 @@ export default function GuestEvent() {
                 />
               </>
             )}
-            <label className="flex items-start gap-2 text-xs text-muted leading-snug">
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5"
-              />
-              <span>
-                Загружая фото, я соглашаюсь на публикацию в общей ленте мероприятия и обработку изображений.
-              </span>
-            </label>
             {pinError && <p className="text-center text-sm text-red-700">{pinError}</p>}
             <button
               type="submit"
