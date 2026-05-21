@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { createRequire } from 'module';
 import QRCode from 'qrcode';
 
@@ -22,6 +23,7 @@ import {
   deletePhotoForEvent,
   downloadPhotoBuffer,
   listPhotosForOrganizer,
+  uploadEventLoginBg,
 } from '../photos.js';
 import { generatePin } from '../pin.js';
 import type { EventPlan, EventSettings } from '../types.js';
@@ -31,6 +33,15 @@ function guestBaseUrl(): string {
   if (app) return app.replace(/\/+$/, '');
   return 'http://localhost:5174';
 }
+
+const brandingUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Только изображения'));
+  },
+});
 
 export function organizerRouter(): Router {
   const router = Router();
@@ -135,6 +146,49 @@ export function organizerRouter(): Router {
       res.status(500).json({ error: 'Ошибка обновления' });
     }
   });
+
+  router.post(
+    '/events/:id/login-bg',
+    (req, res, next) => {
+      brandingUpload.single('image')(req, res, (err: unknown) => {
+        if (err) {
+          const msg = err instanceof Error ? err.message : 'Ошибка файла';
+          res.status(400).json({ error: msg });
+          return;
+        }
+        next();
+      });
+    },
+    async (req, res) => {
+      try {
+        const org = getOrganizer(req);
+        const event = await getEventById(req.params.id);
+        if (!event || !canAccessEvent(event, org)) {
+          res.status(404).json({ error: 'Не найдено' });
+          return;
+        }
+        if (!req.file?.buffer) {
+          res.status(400).json({ error: 'Выберите изображение' });
+          return;
+        }
+        const loginBgUrl = await uploadEventLoginBg(
+          event.id,
+          req.file.buffer,
+          req.file.originalname || 'bg.jpg',
+          req.file.mimetype,
+        );
+        const settings: EventSettings = {
+          ...((event.settings || {}) as EventSettings),
+          loginBgUrl,
+        };
+        const updated = await updateEvent(event.id, org.id, { settings });
+        res.json({ loginBgUrl, event: updated });
+      } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Не удалось загрузить фон' });
+      }
+    },
+  );
 
   router.get('/events/:id/photos', async (req, res) => {
     try {

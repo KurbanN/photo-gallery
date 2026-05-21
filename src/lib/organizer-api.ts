@@ -32,6 +32,13 @@ export async function fetchMe(): Promise<OrganizerProfile> {
   return body.profile;
 }
 
+export type EventSettings = {
+  welcomeTitle?: string;
+  welcomeSubtitle?: string;
+  loginBgUrl?: string;
+  headerSubtitle?: string;
+};
+
 export type EventRow = {
   id: string;
   slug: string;
@@ -40,9 +47,14 @@ export type EventRow = {
   plan: string;
   photo_limit: number;
   moderation_enabled: boolean;
+  pin_enabled?: boolean;
   ends_at: string | null;
-  settings: Record<string, unknown>;
+  settings: EventSettings;
 };
+
+function authHeadersMultipart(token: string): HeadersInit {
+  return { Authorization: `Bearer ${token}` };
+}
 
 export async function listEvents(): Promise<EventRow[]> {
   const res = await fetch(apiUrl('/api/v1/organizer/events'), { headers: await authHeaders() });
@@ -73,6 +85,41 @@ export async function getEvent(id: string): Promise<{ event: EventRow; guestUrl:
   });
   const body = await res.json();
   if (!res.ok) throw new Error(body.error || 'Ошибка');
+  return body;
+}
+
+export async function updateEvent(
+  id: string,
+  patch: { title?: string; settings?: EventSettings },
+): Promise<EventRow> {
+  const res = await fetch(apiUrl(`/api/v1/organizer/events/${id}`), {
+    method: 'PATCH',
+    headers: await authHeaders(),
+    body: JSON.stringify(patch),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || 'Ошибка сохранения');
+  return body.event;
+}
+
+export async function uploadLoginBg(
+  eventId: string,
+  file: File,
+): Promise<{ loginBgUrl: string; event: EventRow }> {
+  assertApi();
+  const supabase = createClient();
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error('Нужен вход');
+  const form = new FormData();
+  form.append('image', file);
+  const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/login-bg`), {
+    method: 'POST',
+    headers: authHeadersMultipart(token),
+    body: form,
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || 'Не удалось загрузить фон');
   return body;
 }
 

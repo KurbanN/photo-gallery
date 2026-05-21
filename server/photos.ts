@@ -102,6 +102,26 @@ export async function uploadPhotoForEvent(
   return rowToEntry(inserted as PhotoRow);
 }
 
+export async function uploadEventLoginBg(
+  eventId: string,
+  buffer: Buffer,
+  originalName: string,
+  mimetype: string,
+): Promise<string> {
+  const ext = path.extname(originalName).toLowerCase() || '.jpg';
+  const safeExt = ['.jpg', '.jpeg', '.png', '.webp'].includes(ext) ? ext : '.jpg';
+  const storagePath = `events/${eventId}/branding/login-bg${safeExt}`;
+  const supabase = getSupabase();
+  const bucket = getBucket();
+  const contentType = mimetype.startsWith('image/') ? mimetype : mimeFromFilename(safeExt);
+  const { error: upErr } = await supabase.storage.from(bucket).upload(storagePath, buffer, {
+    contentType,
+    upsert: true,
+  });
+  if (upErr) throw upErr;
+  return publicUrlForPath(storagePath);
+}
+
 export async function deletePhotoForEvent(eventId: string, photoId: string): Promise<void> {
   const supabase = getSupabase();
   const bucket = getBucket();

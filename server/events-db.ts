@@ -165,7 +165,9 @@ export async function updateEvent(
   if (patch.status !== undefined) body.status = patch.status;
   if (patch.ends_at !== undefined) body.ends_at = patch.ends_at;
   if (patch.moderation_enabled !== undefined) body.moderation_enabled = patch.moderation_enabled;
-  if (patch.settings !== undefined) body.settings = patch.settings;
+  if (patch.settings !== undefined) {
+    body.settings = { ...((existing.settings || {}) as EventSettings), ...patch.settings };
+  }
   if (patch.pin !== undefined) {
     body.pin_hash = patch.pin ? await hashPin(patch.pin) : null;
     body.pin_enabled = !!patch.pin;
