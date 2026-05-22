@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import CreateEventSteps, { type CreateEventStep } from '@/components/CreateEventSteps';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
 import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings } from '@/lib/event-branding';
 import { createEvent, uploadLoginBg } from '@/lib/organizer-api';
@@ -17,6 +18,7 @@ export default function EventCreate() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [step, setStep] = useState<CreateEventStep>('basic');
   const [created, setCreated] = useState<{ pin: string; guestUrl: string; id: string } | null>(null);
 
   useEffect(() => {
@@ -93,11 +95,23 @@ export default function EventCreate() {
           ← Назад
         </Link>
         <h1 className="font-serif text-2xl mt-4 mb-2">Новое мероприятие</h1>
-        <p className="text-sm text-muted mb-8">Сначала настройте экран для гостей — так они увидят его по QR.</p>
 
-        <form onSubmit={submit} className="space-y-10">
-          <section className="space-y-4 border-b border-line pb-10">
-            <h2 className="text-xs uppercase tracking-[0.2em] text-muted">Основное</h2>
+        <CreateEventSteps step={step} onChange={setStep} />
+
+        <form
+          onSubmit={(e) => {
+            if (step === 'basic') {
+              e.preventDefault();
+              if (!title.trim()) return;
+              setStep('guest');
+              return;
+            }
+            void submit(e);
+          }}
+          className="space-y-6"
+        >
+          {step === 'basic' && (
+          <section className="space-y-4">
             <div>
               <label className="text-xs uppercase text-muted">Название мероприятия</label>
               <input
@@ -141,9 +155,10 @@ export default function EventCreate() {
               </div>
             </div>
           </section>
+          )}
 
+          {step === 'guest' && (
           <section>
-            <h2 className="text-xs uppercase tracking-[0.2em] text-muted mb-4">Экран входа для гостей</h2>
             <div className="grid gap-8 md:grid-cols-[minmax(0,240px)_1fr]">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-muted mb-2">Предпросмотр</p>
@@ -193,16 +208,28 @@ export default function EventCreate() {
               </div>
             </div>
           </section>
+          )}
 
           {error && <p className="text-sm text-red-700">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-ink text-paper py-3 text-xs uppercase flex justify-center gap-2 disabled:opacity-60"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Создать мероприятие
-          </button>
+          <div className="flex gap-3 pt-2">
+            {step === 'guest' && (
+              <button
+                type="button"
+                onClick={() => setStep('basic')}
+                className="flex-1 border border-line py-3 text-xs uppercase"
+              >
+                Назад
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-[2] bg-ink text-paper py-3 text-xs uppercase flex justify-center gap-2 disabled:opacity-60"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {step === 'basic' ? 'Далее' : 'Создать мероприятие'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

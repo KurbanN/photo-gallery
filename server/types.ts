@@ -15,6 +15,7 @@ export type EventRow = {
   organizer_id: string | null;
   title: string;
   pin_hash: string | null;
+  pin_plain: string | null;
   pin_enabled: boolean;
   status: EventStatus;
   plan: EventPlan;

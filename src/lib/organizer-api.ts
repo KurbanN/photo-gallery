@@ -48,6 +48,8 @@ export type EventRow = {
   photo_limit: number;
   moderation_enabled: boolean;
   pin_enabled?: boolean;
+  /** Код для гостей (только в кабинете организатора/админа) */
+  pin?: string | null;
   ends_at: string | null;
   settings: EventSettings;
 };
@@ -91,7 +93,7 @@ export async function getEvent(id: string): Promise<{ event: EventRow; guestUrl:
 
 export async function updateEvent(
   id: string,
-  patch: { title?: string; settings?: EventSettings },
+  patch: { title?: string; settings?: EventSettings; pin?: string },
 ): Promise<EventRow> {
   const res = await fetch(apiUrl(`/api/v1/organizer/events/${id}`), {
     method: 'PATCH',
@@ -101,6 +103,15 @@ export async function updateEvent(
   const body = await res.json();
   if (!res.ok) throw new Error(body.error || 'Ошибка сохранения');
   return body.event;
+}
+
+export async function deleteAdminEvent(id: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/v1/admin/events/${id}`), {
+    method: 'DELETE',
+    headers: await authHeaders(),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((body as { error?: string }).error || 'Не удалось удалить');
 }
 
 export async function uploadLoginBg(

@@ -108,6 +108,13 @@ export default function Dashboard() {
                     <p className="font-medium text-ink">{ev.title}</p>
                     <p className="text-xs text-muted mt-1">
                       /e/{ev.slug} · {ev.status} · {ev.plan}
+                      {ev.pin ? (
+                        <>
+                          {' '}
+                          · код{' '}
+                          <span className="tracking-widest text-ink font-medium">{ev.pin}</span>
+                        </>
+                      ) : null}
                     </p>
                   </Link>
                 </li>

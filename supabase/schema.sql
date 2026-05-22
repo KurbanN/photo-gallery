@@ -22,6 +22,7 @@ create table if not exists public.events (
   organizer_id uuid references public.organizers (id) on delete set null,
   title text not null default 'Мероприятие',
   pin_hash text,
+  pin_plain text,
   pin_enabled boolean not null default true,
   status text not null default 'active',
   plan text not null default 'party',

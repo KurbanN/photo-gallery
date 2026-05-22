@@ -1,7 +1,57 @@
-import { getSupabase } from './supabase.js';
+import { getBucket, getSupabase } from './supabase.js';
 import { hashPin, verifyPin } from './pin.js';
 import type { EventPlan, EventRow, EventSettings } from './types.js';
 import { PLAN_LIMITS as limits } from './types.js';
+
+export type OrganizerEventView = Omit<EventRow, 'pin_hash' | 'pin_plain'> & { pin: string | null };
+
+export function organizerEventView(event: EventRow): OrganizerEventView {
+  const { pin_hash: _h, pin_plain, ...rest } = event;
+  return { ...rest, pin: pin_plain ?? null };
+}
+
+async function removeStorageFolder(prefix: string): Promise<void> {
+  const supabase = getSupabase();
+  const bucket = getBucket();
+  const { data: items, error } = await supabase.storage.from(bucket).list(prefix);
+  if (error || !items?.length) return;
+  const filePaths: string[] = [];
+  for (const item of items) {
+    const path = `${prefix}/${item.name}`;
+    if (item.id === null) {
+      await removeStorageFolder(path);
+    } else {
+      filePaths.push(path);
+    }
+  }
+  if (filePaths.length) {
+    await supabase.storage.from(bucket).remove(filePaths);
+  }
+}
+
+export async function deleteEvent(eventId: string): Promise<void> {
+  const supabase = getSupabase();
+  const event = await getEventById(eventId);
+  if (!event) throw new Error('NOT_FOUND');
+
+  const { data: photos, error: photosErr } = await supabase
+    .from('photos')
+    .select('storage_path')
+    .eq('event_id', eventId);
+  if (photosErr) throw photosErr;
+
+  const bucket = getBucket();
+  const paths = (photos ?? [])
+    .map((p) => p.storage_path as string)
+    .filter(Boolean);
+  if (paths.length) {
+    await supabase.storage.from(bucket).remove(paths);
+  }
+  await removeStorageFolder(`events/${eventId}`);
+
+  const { error: delErr } = await supabase.from('events').delete().eq('id', eventId);
+  if (delErr) throw delErr;
+}
 
 export async function getEventBySlug(slug: string): Promise<EventRow | null> {
   const supabase = getSupabase();
@@ -95,6 +145,7 @@ export async function createEvent(input: CreateEventInput): Promise<EventRow> {
     organizer_id: input.organizerId,
     title: input.title.trim(),
     pin_hash: pin ? await hashPin(pin) : null,
+    pin_plain: pin ?? null,
     pin_enabled: !!pin,
     status: 'active' as const,
     plan,
@@ -169,8 +220,10 @@ export async function updateEvent(
     body.settings = { ...((existing.settings || {}) as EventSettings), ...patch.settings };
   }
   if (patch.pin !== undefined) {
-    body.pin_hash = patch.pin ? await hashPin(patch.pin) : null;
-    body.pin_enabled = !!patch.pin;
+    const nextPin = patch.pin?.trim() || '';
+    body.pin_hash = nextPin ? await hashPin(nextPin) : null;
+    body.pin_plain = nextPin || null;
+    body.pin_enabled = !!nextPin;
   }
   const { data, error } = await supabase
     .from('events')
@@ -211,6 +264,7 @@ export async function ensureLegacyEvent(): Promise<EventRow | null> {
     organizer_id: null,
     title,
     pin_hash: pin ? await hashPin(pin) : null,
+    pin_plain: pin ?? null,
     pin_enabled: !!pin,
     status: 'active' as const,
     plan: 'premium' as const,

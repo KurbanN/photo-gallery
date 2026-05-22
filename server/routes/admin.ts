@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getOrganizer, requireAdmin } from '../auth.js';
+import { deleteEvent } from '../events-db.js';
 import {
   grantOrganizerByEmail,
   listOrganizersAndInvites,
@@ -44,6 +45,20 @@ export function adminRouter(): Router {
       }
       console.error(e);
       res.status(500).json({ error: 'Не удалось выдать доступ' });
+    }
+  });
+
+  router.delete('/events/:id', async (req, res) => {
+    try {
+      await deleteEvent(req.params.id);
+      res.json({ ok: true });
+    } catch (e) {
+      if (e instanceof Error && e.message === 'NOT_FOUND') {
+        res.status(404).json({ error: 'Мероприятие не найдено' });
+        return;
+      }
+      console.error(e);
+      res.status(500).json({ error: 'Не удалось удалить мероприятие' });
     }
   });
 

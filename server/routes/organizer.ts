@@ -11,6 +11,7 @@ import {
   createEvent,
   getEventById,
   listEventsForProfile,
+  organizerEventView,
   slugify,
   updateEvent,
 } from '../events-db.js';
@@ -56,7 +57,7 @@ export function organizerRouter(): Router {
     try {
       const org = getOrganizer(req);
       const events = await listEventsForProfile(org);
-      res.json({ events });
+      res.json({ events: events.map(organizerEventView) });
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: 'Ошибка списка' });
@@ -89,7 +90,11 @@ export function organizerRouter(): Router {
         organizerId: org.id,
         organizerEmail: org.email ?? undefined,
       });
-      res.status(201).json({ event, pin, guestUrl: `${guestBaseUrl()}/e/${event.slug}` });
+      res.status(201).json({
+        event: organizerEventView(event),
+        pin,
+        guestUrl: `${guestBaseUrl()}/e/${event.slug}`,
+      });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '';
       if (/duplicate|unique/i.test(msg)) {
@@ -110,7 +115,7 @@ export function organizerRouter(): Router {
         return;
       }
       res.json({
-        event,
+        event: organizerEventView(event),
         guestUrl: `${guestBaseUrl()}/e/${event.slug}`,
       });
     } catch (e) {
@@ -136,7 +141,7 @@ export function organizerRouter(): Router {
         settings: body.settings,
         pin: body.pin,
       });
-      res.json({ event });
+      res.json({ event: organizerEventView(event), pin: event.pin_plain ?? null });
     } catch (e) {
       if (e instanceof Error && e.message === 'NOT_FOUND') {
         res.status(404).json({ error: 'Не найдено' });
@@ -182,7 +187,7 @@ export function organizerRouter(): Router {
           loginBgUrl,
         };
         const updated = await updateEvent(event.id, org.id, { settings });
-        res.json({ loginBgUrl, event: updated });
+        res.json({ loginBgUrl, event: organizerEventView(updated) });
       } catch (e) {
         console.error(e);
         res.status(500).json({ error: 'Не удалось загрузить фон' });
@@ -284,7 +289,7 @@ export function organizerRouter(): Router {
         status: 'ended',
         ends_at: new Date().toISOString(),
       });
-      res.json({ event });
+      res.json({ event: organizerEventView(event) });
     } catch (e) {
       if (e instanceof Error && e.message === 'NOT_FOUND') {
         res.status(404).json({ error: 'Не найдено' });
