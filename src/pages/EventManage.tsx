@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Download, ExternalLink, Loader2, Trash2, Upload } from 'lucide-react';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
 import { apiUrl } from '@/lib/api-base';
+import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings } from '@/lib/event-branding';
 import { resolveBgUrl } from '@/lib/resolve-bg-url';
 import {
   deleteOrgPhoto,
@@ -17,13 +18,11 @@ import {
 } from '@/lib/organizer-api';
 import { createClient } from '@/lib/supabase/client';
 
-const DEFAULT_SUBTITLE = 'Введите код с карточки на столе, затем снимайте и смотрите фото гостей.';
-
 function readSettings(raw: EventSettings | undefined, title: string) {
   const s = raw ?? {};
   return {
     welcomeTitle: (s.welcomeTitle as string) || title,
-    welcomeSubtitle: (s.welcomeSubtitle as string) || DEFAULT_SUBTITLE,
+    welcomeSubtitle: (s.welcomeSubtitle as string) || DEFAULT_GUEST_SUBTITLE,
     loginBgUrl: (s.loginBgUrl as string) || '',
   };
 }
@@ -102,11 +101,7 @@ export default function EventManage() {
     setBrandingSaving(true);
     setBrandingMsg('');
     try {
-      const settings: EventSettings = {
-        welcomeTitle: welcomeTitle.trim() || title,
-        welcomeSubtitle: welcomeSubtitle.trim() || DEFAULT_SUBTITLE,
-        loginBgUrl: savedLoginBgUrl || undefined,
-      };
+      const settings = buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle, savedLoginBgUrl);
       await updateEvent(id, { settings });
       setBrandingMsg('Тексты сохранены');
     } catch (e) {
@@ -128,11 +123,7 @@ export default function EventManage() {
     try {
       const { loginBgUrl } = await uploadLoginBg(id, file);
       await updateEvent(id, {
-        settings: {
-          welcomeTitle: welcomeTitle.trim() || title,
-          welcomeSubtitle: welcomeSubtitle.trim() || DEFAULT_SUBTITLE,
-          loginBgUrl,
-        },
+        settings: buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle, loginBgUrl),
       });
       setSavedLoginBgUrl(loginBgUrl);
       if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
@@ -269,11 +260,7 @@ export default function EventManage() {
                       setBgUploading(true);
                       try {
                         await updateEvent(id, {
-                          settings: {
-                            welcomeTitle: welcomeTitle.trim() || title,
-                            welcomeSubtitle: welcomeSubtitle.trim() || DEFAULT_SUBTITLE,
-                            loginBgUrl: undefined,
-                          },
+                          settings: buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle),
                         });
                         setSavedLoginBgUrl('');
                         if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);

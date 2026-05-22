@@ -68,6 +68,7 @@ export async function createEvent(payload: {
   slug?: string;
   plan?: string;
   endsAt?: string;
+  settings?: EventSettings;
 }): Promise<{ event: EventRow; pin: string; guestUrl: string }> {
   const res = await fetch(apiUrl('/api/v1/organizer/events'), {
     method: 'POST',
