@@ -48,9 +48,9 @@ export default function EventManage() {
   const [brandingMsg, setBrandingMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const previewBgUrl = useMemo(() => {
+  const previewBgUrl = useMemo((): string | null => {
     if (previewBlobUrl) return previewBlobUrl;
-    return resolveBgUrl(savedLoginBgUrl || undefined);
+    return resolveBgUrl(savedLoginBgUrl);
   }, [previewBlobUrl, savedLoginBgUrl]);
 
   const load = useCallback(async () => {
@@ -250,15 +250,48 @@ export default function EventManage() {
                 onChange={(e) => onPickBackground(e.target.files?.[0])}
               />
               <p className="text-[11px] text-muted mt-1">JPG или PNG, до 8 МБ. Сначала смотрите предпросмотр слева.</p>
-              <button
-                type="button"
-                disabled={bgUploading}
-                onClick={() => void applyBackground()}
-                className="mt-3 w-full bg-ink text-paper py-3 text-xs uppercase flex justify-center gap-2 disabled:opacity-60"
-              >
-                {bgUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                Сохранить фон
-              </button>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  disabled={bgUploading}
+                  onClick={() => void applyBackground()}
+                  className="flex-1 bg-ink text-paper py-3 text-xs uppercase flex justify-center gap-2 disabled:opacity-60"
+                >
+                  {bgUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  Сохранить фон
+                </button>
+                {(savedLoginBgUrl || previewBlobUrl) && (
+                  <button
+                    type="button"
+                    disabled={bgUploading}
+                    onClick={async () => {
+                      if (!id || !confirm('Убрать фон? Будет нейтральный экран.')) return;
+                      setBgUploading(true);
+                      try {
+                        await updateEvent(id, {
+                          settings: {
+                            welcomeTitle: welcomeTitle.trim() || title,
+                            welcomeSubtitle: welcomeSubtitle.trim() || DEFAULT_SUBTITLE,
+                            loginBgUrl: undefined,
+                          },
+                        });
+                        setSavedLoginBgUrl('');
+                        if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+                        setPreviewBlobUrl(null);
+                        if (fileRef.current) fileRef.current.value = '';
+                        setBrandingMsg('Фон убран');
+                      } catch (e) {
+                        setBrandingMsg(e instanceof Error ? e.message : 'Ошибка');
+                      } finally {
+                        setBgUploading(false);
+                      }
+                    }}
+                    className="border border-line px-3 py-3 text-xs uppercase text-muted disabled:opacity-60"
+                  >
+                    Убрать
+                  </button>
+                )}
+              </div>
             </div>
             {brandingMsg && (
               <p className={`text-sm ${brandingMsg.includes('Ошиб') ? 'text-red-700' : 'text-emerald-800'}`}>

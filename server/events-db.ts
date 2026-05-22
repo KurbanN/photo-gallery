@@ -203,7 +203,7 @@ export async function ensureLegacyEvent(): Promise<EventRow | null> {
   const settings: EventSettings = {
     welcomeTitle: title,
     welcomeSubtitle: process.env.LEGACY_EVENT_SUBTITLE || undefined,
-    loginBgUrl: `${process.env.LEGACY_LOGIN_BG || '/login-bg.jpg'}`,
+    loginBgUrl: process.env.LEGACY_LOGIN_BG?.trim() || undefined,
     headerSubtitle: process.env.LEGACY_EVENT_SUBTITLE || undefined,
   };
   const row = {

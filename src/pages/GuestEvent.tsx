@@ -339,13 +339,21 @@ export default function GuestEvent() {
 
   if (!pin) {
     return (
-      <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-16">
+      <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-16 bg-paper">
+        {bgUrl ? (
+          <div
+            className="pointer-events-none absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${bgUrl})` }}
+            aria-hidden
+          />
+        ) : null}
         <div
-          className="pointer-events-none absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${bgUrl})` }}
-          aria-hidden
+          className={`pointer-events-none absolute inset-0 ${
+            bgUrl
+              ? 'bg-gradient-to-b from-paper/88 via-paper/78 to-paper/90 backdrop-blur-[2px]'
+              : 'bg-gradient-to-b from-paper via-line/20 to-paper'
+          }`}
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-paper/88 via-paper/78 to-paper/90 backdrop-blur-[2px]" />
         <div className="relative z-10 flex w-full max-w-xs flex-col items-center">
           <p className="mb-2 text-center font-serif text-3xl text-ink md:text-4xl">{welcomeTitle}</p>
           <p className="mb-8 max-w-sm text-center text-sm leading-relaxed text-muted">{welcomeSubtitle}</p>
@@ -436,7 +444,11 @@ export default function GuestEvent() {
               />
               {!cameraReady && !pendingPreviewUrl && (
                 <div className="absolute inset-0 flex flex-col">
-                  <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgUrl})` }} />
+                  {bgUrl ? (
+                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgUrl})` }} />
+                  ) : (
+                    <div className="absolute inset-0 bg-ink/80" />
+                  )}
                   <div className="absolute inset-0 bg-black/50" />
                   <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-5 p-6">
                     {cameraOpening ? (

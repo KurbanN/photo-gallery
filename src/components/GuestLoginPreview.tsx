@@ -1,5 +1,5 @@
 type Props = {
-  bgUrl: string;
+  bgUrl: string | null;
   welcomeTitle: string;
   welcomeSubtitle: string;
   pinRequired?: boolean;
@@ -19,12 +19,20 @@ export default function GuestLoginPreview({
       className={`relative overflow-hidden border border-line bg-paper ${className}`}
       style={{ aspectRatio: '9 / 16', maxHeight: '420px' }}
     >
+      {bgUrl ? (
+        <div
+          className="pointer-events-none absolute inset-0 bg-cover bg-center scale-105"
+          style={{ backgroundImage: `url(${bgUrl})` }}
+          aria-hidden
+        />
+      ) : (
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-paper via-line/30 to-paper" aria-hidden />
+      )}
       <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-center scale-105"
-        style={{ backgroundImage: `url(${bgUrl})` }}
-        aria-hidden
+        className={`pointer-events-none absolute inset-0 ${
+          bgUrl ? 'bg-gradient-to-b from-paper/88 via-paper/78 to-paper/90 backdrop-blur-[2px]' : ''
+        }`}
       />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-paper/88 via-paper/78 to-paper/90 backdrop-blur-[2px]" />
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 py-8">
         <p className="mb-1 text-center font-serif text-lg text-ink leading-tight">{welcomeTitle || 'Название'}</p>
         <p className="mb-6 max-w-[220px] text-center text-[11px] leading-relaxed text-muted">
