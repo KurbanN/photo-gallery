@@ -1,9 +1,9 @@
 type TabId = 'guest' | 'gallery' | 'tools';
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'guest', label: 'Экран гостя' },
   { id: 'gallery', label: 'Галерея' },
   { id: 'tools', label: 'QR и экспорт' },
+  { id: 'guest', label: 'Экран гостя' },
 ];
 
 type Props = {

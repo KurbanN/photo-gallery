@@ -22,7 +22,7 @@ import {
 } from '@/lib/organizer-api';
 import { createClient } from '@/lib/supabase/client';
 
-const VALID_TABS: EventManageTab[] = ['guest', 'gallery', 'tools'];
+const VALID_TABS: EventManageTab[] = ['gallery', 'tools', 'guest'];
 
 function readSettings(raw: EventSettings | undefined, title: string) {
   const s = raw ?? {};
@@ -35,7 +35,7 @@ function readSettings(raw: EventSettings | undefined, title: string) {
 
 function parseTab(raw: string | null): EventManageTab {
   if (raw && VALID_TABS.includes(raw as EventManageTab)) return raw as EventManageTab;
-  return 'guest';
+  return 'gallery';
 }
 
 export default function EventManage() {
@@ -45,7 +45,7 @@ export default function EventManage() {
   const tab = parseTab(searchParams.get('tab'));
 
   const setTab = (next: EventManageTab) => {
-    setSearchParams(next === 'guest' ? {} : { tab: next }, { replace: true });
+    setSearchParams(next === 'gallery' ? {} : { tab: next }, { replace: true });
   };
 
   const [guestUrl, setGuestUrl] = useState('');

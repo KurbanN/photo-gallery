@@ -234,6 +234,7 @@ export default function GuestEvent() {
   const takePhoto = async () => {
     if (!videoRef.current || pendingPreviewUrl) return;
     setShootError('');
+    setUploadBanner(null);
     try {
       const blob = await captureStillFromVideo(videoRef.current, cameraFacing === 'user');
       pendingBlobRef.current = blob;
@@ -241,12 +242,22 @@ export default function GuestEvent() {
         if (prev) URL.revokeObjectURL(prev);
         return URL.createObjectURL(blob);
       });
+      streamRef.current?.getVideoTracks().forEach((tr) => tr.stop());
+      streamRef.current = null;
+      const el = videoRef.current;
+      if (el) el.srcObject = null;
+      setCameraReady(false);
+      setCameraOpening(false);
+      cameraOpeningRef.current = false;
     } catch (e) {
       setShootError(e instanceof Error ? e.message : 'Не удалось снять');
     }
   };
 
-  const submitPhotoBlob = async (blob: Blob, opts?: { afterCamera?: boolean }) => {
+  const submitPhotoBlob = async (
+    blob: Blob,
+    opts?: { afterCamera?: boolean; batch?: { index: number; total: number }; goToFeed?: boolean },
+  ) => {
     if (!pin) return;
     if (!eventPublic?.uploadsOpen) {
       setShootError(eventPublic?.uploadsClosedReason || 'Загрузка закрыта');
@@ -254,19 +265,30 @@ export default function GuestEvent() {
     }
     setUploading(true);
     setShootError('');
-    setUploadBanner({ kind: 'loading', text: 'Загрузка фото…' });
+    const batchLabel =
+      opts?.batch && opts.batch.total > 1
+        ? `Загрузка ${opts.batch.index} из ${opts.batch.total}…`
+        : 'Загрузка фото…';
+    setUploadBanner({ kind: 'loading', text: batchLabel });
     try {
       await uploadPhoto(slug, pin, blob, author.trim() || undefined);
       if (opts?.afterCamera) discardPending();
-      setAuthor('');
-      const text = 'Фото загружено и уже в общей ленте.';
+      const text =
+        opts?.batch && opts.batch.total > 1
+          ? `Загружено ${opts.batch.index} из ${opts.batch.total}.`
+          : 'Фото загружено и уже в общей ленте.';
       setUploadNotice(text);
       setUploadBanner({ kind: 'success', text });
       await loadFeed();
-      window.setTimeout(() => {
-        setTab('feed');
-        setUploadBanner(null);
-      }, 1600);
+      if (opts?.goToFeed !== false && (!opts?.batch || opts.batch.index === opts.batch.total)) {
+        setAuthor('');
+        window.setTimeout(() => {
+          setTab('feed');
+          setUploadBanner(null);
+        }, 1600);
+      } else if (opts?.batch && opts.batch.index < opts.batch.total) {
+        window.setTimeout(() => setUploadBanner(null), 400);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Не удалось загрузить';
       setShootError(msg);
@@ -289,16 +311,22 @@ export default function GuestEvent() {
     }
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '*/*';
+    input.accept = 'image/*';
+    input.multiple = true;
     input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      if (!isProbablyImageFile(file)) {
-        setShootError('Нужен файл изображения');
+      const list = input.files ? Array.from(input.files).filter(isProbablyImageFile) : [];
+      if (list.length === 0) {
+        setShootError('Выберите одно или несколько фото');
         setUploadBanner({ kind: 'error', text: 'Нужен файл изображения' });
         return;
       }
-      await submitPhotoBlob(file);
+      setShootError('');
+      for (let i = 0; i < list.length; i++) {
+        await submitPhotoBlob(list[i], {
+          batch: { index: i + 1, total: list.length },
+          goToFeed: i === list.length - 1,
+        });
+      }
     };
     input.click();
   };
@@ -466,20 +494,28 @@ export default function GuestEvent() {
                 </div>
               )}
               {pendingPreviewUrl && (
-                <div className="absolute inset-0 z-30 flex flex-col bg-black">
-                  <img src={pendingPreviewUrl} alt="" className="flex-1 object-contain" />
-                  <div className="flex gap-3 p-4 border-t border-white/10">
-                    <button type="button" onClick={() => discardPending()} className="flex-1 border border-paper/50 py-3 text-xs text-paper uppercase">
+                <div className="absolute inset-0 z-40 grid grid-rows-[1fr_auto] bg-black">
+                  <img src={pendingPreviewUrl} alt="" className="min-h-0 w-full h-full object-contain" />
+                  <div className="flex gap-3 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/20 bg-black shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        discardPending();
+                        void openCamera();
+                      }}
+                      disabled={uploading}
+                      className="flex-1 min-h-[3rem] border border-paper/50 py-3 text-xs text-paper uppercase disabled:opacity-50"
+                    >
                       Переснять
                     </button>
                     <button
                       type="button"
                       onClick={() => void confirmPendingUpload()}
                       disabled={uploading}
-                      className="flex-1 flex justify-center gap-2 bg-paper py-3 text-xs text-ink uppercase"
+                      className="flex-1 min-h-[3rem] flex items-center justify-center gap-2 bg-paper py-3 text-xs font-semibold text-ink uppercase disabled:opacity-60"
                     >
                       {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-                      В ленту
+                      Отправить
                     </button>
                   </div>
                 </div>
@@ -539,7 +575,7 @@ export default function GuestEvent() {
               ) : (
                 <>
                   <FileImage className="h-5 w-5" />
-                  Выбрать фото
+                  Выбрать фото (можно несколько)
                 </>
               )}
             </button>
