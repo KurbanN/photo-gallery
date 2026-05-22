@@ -3,13 +3,13 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Copy, Download, ExternalLink, Loader2, Trash2, Upload } from 'lucide-react';
 import EventManageTabs, { type EventManageTab } from '@/components/EventManageTabs';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
+import QrPrintCardSection from '@/components/QrPrintCardSection';
 import { apiUrl } from '@/lib/api-base';
 import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings } from '@/lib/event-branding';
 import { resolveBgUrl } from '@/lib/resolve-bg-url';
 import {
   deleteAdminEvent,
   deleteOrgPhoto,
-  downloadQr,
   endEvent,
   fetchMe,
   getEvent,
@@ -437,16 +437,20 @@ export default function EventManage() {
               {!pinEnabled && <p className="text-xs text-muted">Вход по коду отключён для этого мероприятия.</p>}
             </div>
 
-            <p className="text-sm text-muted">QR для печати, архив всех фото и управление приёмом.</p>
+            {guestUrl && (
+              <QrPrintCardSection
+                eventId={id}
+                slug={slug}
+                guestUrl={guestUrl}
+                eventTitle={title}
+                welcomeTitle={welcomeTitle}
+                welcomeSubtitle={welcomeSubtitle}
+                guestPin={guestPin}
+                pinEnabled={pinEnabled}
+              />
+            )}
+
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => downloadQr(id, slug)}
-                className="border border-ink px-4 py-3 text-xs uppercase flex items-center justify-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Скачать QR PNG
-              </button>
               <button
                 type="button"
                 onClick={() => void downloadZip()}
