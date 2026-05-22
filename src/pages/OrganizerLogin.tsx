@@ -1,20 +1,27 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { getOrganizerAuthRedirectUrl } from '@/lib/auth-redirect';
 import { createClient } from '@/lib/supabase/client';
 
 function formatAuthError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes('email rate limit') || m.includes('rate limit exceeded')) {
+  if (m.includes('email not confirmed')) {
     return (
-      'Supabase временно ограничил отправку писем на этот адрес (обычно 2–4 письма в час на бесплатном тарифе). ' +
-      'Подождите 30–60 минут, проверьте папку «Спам» — возможно, ссылка уже пришла раньше. ' +
-      'Для продакшена настройте свой SMTP в Supabase → Project Settings → Authentication → SMTP.'
+      'Supabase требует подтверждение почты. Отключите: Authentication → Providers → Email → ' +
+      'снимите «Confirm email», затем войдите снова или зарегистрируйтесь заново.'
     );
   }
+  if (m.includes('invalid login credentials') || m.includes('invalid credentials')) {
+    return 'Неверный email или пароль. Если вы новый пользователь — вкладка «Регистрация».';
+  }
+  if (m.includes('user already registered')) {
+    return 'Этот email уже зарегистрирован — войдите с паролем.';
+  }
+  if (m.includes('password') && m.includes('short')) {
+    return 'Пароль слишком короткий (минимум 6 символов в Supabase).';
+  }
   if (m.includes('signup disabled') || m.includes('signups not allowed')) {
-    return 'Регистрация по email отключена в Supabase. Включите провайдер Email в Authentication → Providers.';
+    return 'Регистрация отключена в Supabase. Включите Email в Authentication → Providers.';
   }
   return message;
 }
@@ -23,8 +30,7 @@ export default function OrganizerLogin() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState<'magic' | 'password'>('magic');
-  const [sent, setSent] = useState(false);
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -46,21 +52,29 @@ export default function OrganizerLogin() {
     try {
       const supabase = createClient();
       const trimmed = email.trim();
-      if (mode === 'password') {
-        const { error: err } = await supabase.auth.signInWithPassword({
+      if (mode === 'register') {
+        const { data, error: err } = await supabase.auth.signUp({
           email: trimmed,
           password,
         });
         if (err) throw err;
+        if (data.session) return;
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: trimmed,
+          password,
+        });
+        if (signInErr) {
+          throw new Error(
+            'Аккаунт создан, но вход не выполнен. В Supabase отключите «Confirm email» или подтвердите почту.',
+          );
+        }
         return;
       }
-      const redirectTo = getOrganizerAuthRedirectUrl();
-      const { error: err } = await supabase.auth.signInWithOtp({
+      const { error: err } = await supabase.auth.signInWithPassword({
         email: trimmed,
-        options: { emailRedirectTo: redirectTo },
+        password,
       });
       if (err) throw err;
-      setSent(true);
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'Ошибка';
       setError(formatAuthError(raw));
@@ -77,72 +91,63 @@ export default function OrganizerLogin() {
         </Link>
         <h1 className="font-serif text-3xl mt-6 mb-2">Кабинет организатора</h1>
         <p className="text-sm text-muted mb-4">
-          {mode === 'magic'
-            ? 'Вход по ссылке из письма (magic link).'
-            : 'Вход по паролю (нужен пароль в Supabase Auth).'}
+          {mode === 'login'
+            ? 'Вход по email и паролю — без писем и ссылок.'
+            : 'Создайте аккаунт. Доступ к мероприятиям выдаёт администратор.'}
         </p>
         <div className="flex gap-2 mb-6 text-[10px] uppercase tracking-[0.15em]">
           <button
             type="button"
             onClick={() => {
-              setMode('magic');
-              setSent(false);
+              setMode('login');
               setError('');
             }}
-            className={mode === 'magic' ? 'text-ink border-b border-ink' : 'text-muted'}
+            className={mode === 'login' ? 'text-ink border-b border-ink' : 'text-muted'}
           >
-            Ссылка на почту
+            Вход
           </button>
           <span className="text-muted">·</span>
           <button
             type="button"
             onClick={() => {
-              setMode('password');
-              setSent(false);
+              setMode('register');
               setError('');
             }}
-            className={mode === 'password' ? 'text-ink border-b border-ink' : 'text-muted'}
+            className={mode === 'register' ? 'text-ink border-b border-ink' : 'text-muted'}
           >
-            Пароль
+            Регистрация
           </button>
         </div>
-        {sent && mode === 'magic' ? (
-          <p className="text-sm text-ink bg-paper border border-line p-4">
-            Проверьте почту <strong>{email}</strong> и перейдите по ссылке. Повторная отправка может
-            сработать только через час.
-          </p>
-        ) : (
-          <form onSubmit={submit} className="space-y-4">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@example.com"
-              className="w-full border border-line px-3 py-3"
-            />
-            {mode === 'password' && (
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Пароль"
-                className="w-full border border-line px-3 py-3"
-                autoComplete="current-password"
-              />
-            )}
-            {error && <p className="text-sm text-red-700 leading-relaxed">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-ink text-paper py-3 text-xs uppercase tracking-[0.2em] flex justify-center gap-2"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {mode === 'magic' ? 'Отправить ссылку' : 'Войти'}
-            </button>
-          </form>
-        )}
+        <form onSubmit={submit} className="space-y-4">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="email@example.com"
+            className="w-full border border-line px-3 py-3"
+            autoComplete="email"
+          />
+          <input
+            type="password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={mode === 'register' ? 'Пароль (от 6 символов)' : 'Пароль'}
+            className="w-full border border-line px-3 py-3"
+            autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+          />
+          {error && <p className="text-sm text-red-700 leading-relaxed">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-ink text-paper py-3 text-xs uppercase tracking-[0.2em] flex justify-center gap-2"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {mode === 'login' ? 'Войти' : 'Создать аккаунт'}
+          </button>
+        </form>
       </div>
     </div>
   );
