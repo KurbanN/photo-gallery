@@ -575,7 +575,7 @@ export default function GuestEvent() {
               ) : (
                 <>
                   <FileImage className="h-5 w-5" />
-                  Выбрать фото (можно несколько)
+                  Выбрать фото
                 </>
               )}
             </button>
