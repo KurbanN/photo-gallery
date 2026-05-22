@@ -22,11 +22,15 @@ GitHub Pages — **только статика**. Без `VITE_API_BASE_URL` б�
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | anon key из Supabase |
 | `VITE_API_BASE_URL` | URL вашего API без слэша в конце, напр. `https://photo-gallery-api.onrender.com` |
 
-3. **Supabase → Authentication → URL Configuration → Redirect URLs** добавьте:
-   - `https://kurbann.github.io/photo-gallery/dashboard`
-   - `http://localhost:5174/dashboard` (локально)
+3. **Supabase → Authentication → URL Configuration** (важно для magic link):
+   - **Site URL:** `https://kurbann.github.io/photo-gallery` (не `http://localhost:3000` — иначе письмо ведёт на localhost)
+   - **Redirect URLs** (каждый URL отдельной строкой):
+     - `https://kurbann.github.io/photo-gallery/dashboard`
+     - `http://localhost:5174/photo-gallery/dashboard` (если локально с base path)
+     - `http://localhost:5174/dashboard` (vite dev, если base `/`)
+4. В `public/app-config.json` укажите `"appUrl": "https://kurbann.github.io/photo-gallery"` — тогда ссылка в письме всегда на прод, даже если форму открыли с localhost.
 
-4. На сервере API задайте `APP_PUBLIC_URL=https://kurbann.github.io/photo-gallery` и  
+5. На сервере API задайте `APP_PUBLIC_URL=https://kurbann.github.io/photo-gallery` и  
    `ALLOWED_ORIGINS=https://kurbann.github.io,https://kurbann.github.io/photo-gallery`
 
 ### Проверка

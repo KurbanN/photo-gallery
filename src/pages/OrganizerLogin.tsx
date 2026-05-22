@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { getOrganizerAuthRedirectUrl } from '@/lib/auth-redirect';
 import { createClient } from '@/lib/supabase/client';
 
 function formatAuthError(message: string): string {
@@ -53,10 +54,7 @@ export default function OrganizerLogin() {
         if (err) throw err;
         return;
       }
-      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}dashboard`.replace(
-        /\/+/g,
-        '/',
-      );
+      const redirectTo = getOrganizerAuthRedirectUrl();
       const { error: err } = await supabase.auth.signInWithOtp({
         email: trimmed,
         options: { emailRedirectTo: redirectTo },

@@ -1,5 +1,6 @@
 {
   "supabaseUrl": "https://lnqomifuozlzktzzmgkn.supabase.co",
   "supabasePublishableKey": "sb_publishable_An83ifSFvd2BOQTcer-9nw_4K2b7elx",
-  "apiBaseUrl": "https://photo-gallery-api-production-75c1.up.railway.app"
+  "apiBaseUrl": "https://photo-gallery-api-production-75c1.up.railway.app",
+  "appUrl": "https://kurbann.github.io/photo-gallery"
 }

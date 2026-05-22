@@ -2,6 +2,8 @@ export type AppRuntimeConfig = {
   supabaseUrl: string;
   supabasePublishableKey: string;
   apiBaseUrl?: string;
+  /** Публичный URL сайта без слэша в конце — для magic link на GitHub Pages */
+  appUrl?: string;
 };
 
 let loaded: AppRuntimeConfig | null = null;
@@ -11,10 +13,12 @@ function fromViteEnv(): AppRuntimeConfig | null {
   const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
   if (!supabaseUrl || !supabasePublishableKey) return null;
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, '');
+  const appUrl = import.meta.env.VITE_APP_URL?.trim().replace(/\/+$/, '');
   return {
     supabaseUrl,
     supabasePublishableKey,
     ...(apiBaseUrl ? { apiBaseUrl } : {}),
+    ...(appUrl ? { appUrl } : {}),
   };
 }
 
@@ -45,6 +49,7 @@ export async function loadRuntimeConfig(): Promise<AppRuntimeConfig> {
     supabaseUrl: json.supabaseUrl.trim(),
     supabasePublishableKey: json.supabasePublishableKey.trim(),
     apiBaseUrl: json.apiBaseUrl?.trim().replace(/\/+$/, ''),
+    appUrl: json.appUrl?.trim().replace(/\/+$/, ''),
   };
   return loaded;
 }

@@ -1,5 +1,6 @@
 {
   "supabaseUrl": "https://YOUR_PROJECT.supabase.co",
   "supabasePublishableKey": "sb_publishable_...",
-  "apiBaseUrl": "https://your-api.example.com"
+  "apiBaseUrl": "https://your-api.example.com",
+  "appUrl": "https://YOUR_USER.github.io/photo-gallery"
 }
