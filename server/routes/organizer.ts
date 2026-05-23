@@ -1,10 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { createRequire } from 'module';
 import QRCode from 'qrcode';
-
-const require = createRequire(import.meta.url);
-const archiver = require('archiver') as typeof import('archiver');
 import { getOrganizer, requireOrganizer, requireEventManager } from '../auth.js';
 import type { AuthUser } from '../auth.js';
 import {
@@ -22,7 +18,6 @@ function canAccessEvent(event: EventRow, org: AuthUser): boolean {
 }
 import {
   deletePhotoForEvent,
-  downloadPhotoBuffer,
   listPhotosForOrganizer,
   uploadEventLoginBg,
 } from '../photos.js';
@@ -243,42 +238,6 @@ export function organizerRouter(): Router {
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: 'QR ошибка' });
-    }
-  });
-
-  router.get('/events/:id/export.zip', async (req, res) => {
-    try {
-      const org = getOrganizer(req);
-      const event = await getEventById(req.params.id);
-      if (!event || !canAccessEvent(event, org)) {
-        res.status(404).json({ error: 'Не найдено' });
-        return;
-      }
-      const photos = await listPhotosForOrganizer(event.id);
-      const approved = photos.filter((p) => p.status !== 'rejected');
-      if (approved.length > 500) {
-        res.status(400).json({ error: 'Слишком много фото для синхронного архива (max 500). Свяжитесь с поддержкой.' });
-        return;
-      }
-      res.setHeader('Content-Type', 'application/zip');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${event.slug}-photos.zip"`,
-      );
-      const archive = archiver('zip', { zlib: { level: 6 } });
-      archive.on('error', (err) => {
-        console.error(err);
-        if (!res.headersSent) res.status(500).end();
-      });
-      archive.pipe(res);
-      for (const p of approved) {
-        const { buffer, filename } = await downloadPhotoBuffer(event.id, p.id);
-        archive.append(buffer, { name: filename });
-      }
-      await archive.finalize();
-    } catch (e) {
-      console.error(e);
-      if (!res.headersSent) res.status(500).json({ error: 'Ошибка архива' });
     }
   });
 

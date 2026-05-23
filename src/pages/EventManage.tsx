@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Copy, Download, ExternalLink, Loader2, Trash2, Upload } from 'lucide-react';
+import { Copy, ExternalLink, Loader2, Trash2, Upload } from 'lucide-react';
 import EventManageTabs, { type EventManageTab } from '@/components/EventManageTabs';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
 import QrPrintCardSection from '@/components/QrPrintCardSection';
-import { apiUrl } from '@/lib/api-base';
 import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings } from '@/lib/event-branding';
 import { resolveBgUrl } from '@/lib/resolve-bg-url';
 import {
@@ -20,8 +19,6 @@ import {
   type OrgPhoto,
   type OrganizerProfile,
 } from '@/lib/organizer-api';
-import { createClient } from '@/lib/supabase/client';
-
 const VALID_TABS: EventManageTab[] = ['gallery', 'tools', 'guest'];
 
 function readSettings(raw: EventSettings | undefined, title: string) {
@@ -217,25 +214,6 @@ export default function EventManage() {
     } catch {
       setPinMsg('Не удалось скопировать');
     }
-  };
-
-  const downloadZip = async () => {
-    const supabase = createClient();
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) return;
-    const url = apiUrl(`/api/v1/organizer/events/${id}/export.zip`);
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      alert((body as { error?: string }).error || 'Ошибка архива');
-      return;
-    }
-    const blob = await res.blob();
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${slug}-photos.zip`;
-    a.click();
   };
 
   if (loading) {
@@ -450,16 +428,6 @@ export default function EventManage() {
               />
             )}
 
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => void downloadZip()}
-                className="border border-ink px-4 py-3 text-xs uppercase flex items-center justify-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                ZIP все фото
-              </button>
-            </div>
             <div className="border border-red-200 bg-red-50/50 p-4">
               <p className="text-sm text-ink mb-3">Остановить приём новых фото от гостей. Ленту можно смотреть.</p>
               <button

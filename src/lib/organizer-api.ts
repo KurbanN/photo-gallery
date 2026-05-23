@@ -178,10 +178,6 @@ export function qrUrl(eventId: string): string {
   return apiUrl(`/api/v1/organizer/events/${eventId}/qr`);
 }
 
-export function exportZipUrl(eventId: string): string {
-  return apiUrl(`/api/v1/organizer/events/${eventId}/export.zip`);
-}
-
 export type AdminOrganizerRow = {
   id: string;
   email: string | null;

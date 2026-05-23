@@ -32,11 +32,22 @@ export default function Landing() {
         <section className="mt-16 grid gap-6 text-left w-full text-sm text-muted">
           <div>
             <p className="text-ink font-medium mb-1">Для организаторов</p>
-            <p>Уникальная ссылка, PIN для гостей, QR для печати, архив ZIP.</p>
+            <p>Уникальная ссылка, PIN для гостей, QR для печати.</p>
           </div>
           <div>
-            <p className="text-ink font-medium mb-1">Тарифы</p>
-            <p>Lite от 1 990 ₽ · Party 4 990 ₽ · Premium 9 990 ₽ за мероприятие.</p>
+            <p className="text-ink font-medium mb-1">Тариф</p>
+            <p>
+              <span className="text-ink font-medium">15&nbsp;000&nbsp;₸</span> за мероприятие — все фото гостей
+              сохраняются в облаке, доступны вам в кабинете и остаются после праздника.
+            </p>
+          </div>
+          <div>
+            <p className="text-ink font-medium mb-1">Связаться</p>
+            <p>
+              <a href="tel:+774711110010" className="text-ink hover:underline">
+                +7 747 111 00 10
+              </a>
+            </p>
           </div>
         </section>
       </main>
