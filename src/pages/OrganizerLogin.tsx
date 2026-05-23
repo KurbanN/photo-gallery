@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { APP_BRAND, usePageTitle } from '@/lib/brand';
 import { createClient } from '@/lib/supabase/client';
 
 function formatAuthError(message: string): string {
@@ -27,6 +28,7 @@ function formatAuthError(message: string): string {
 }
 
 export default function OrganizerLogin() {
+  usePageTitle('Вход');
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -89,7 +91,8 @@ export default function OrganizerLogin() {
         <Link to="/" className="text-xs uppercase tracking-[0.2em] text-muted hover:text-ink">
           ← На главную
         </Link>
-        <h1 className="font-serif text-3xl mt-6 mb-2">Кабинет организатора</h1>
+        <p className="font-serif text-2xl mt-6 mb-1">{APP_BRAND}</p>
+        <h1 className="text-sm uppercase tracking-[0.2em] text-muted mb-4">Кабинет организатора</h1>
         <p className="text-sm text-muted mb-4">
           {mode === 'login'
             ? 'Вход по email и паролю — без писем и ссылок.'

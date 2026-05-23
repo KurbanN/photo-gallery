@@ -235,6 +235,61 @@ export async function updateEvent(
   return data as EventRow;
 }
 
+export const DEMO_EVENT_SLUG = 'demo';
+
+/** Публичная демо-лента: без PIN, для лендинга /e/demo */
+export async function ensureDemoEvent(): Promise<EventRow> {
+  const slug = DEMO_EVENT_SLUG;
+  const supabase = getSupabase();
+  const settings: EventSettings = {
+    welcomeTitle: 'Демо-лента',
+    welcomeSubtitle:
+      'Без кода — попробуйте съёмку и общую ленту. Фото сохраняются, как на реальном мероприятии.',
+    headerSubtitle: 'Демонстрация Allmemories',
+  };
+  const { data: existing } = await supabase.from('events').select('*').eq('slug', slug).maybeSingle();
+  if (existing) {
+    const ev = existing as EventRow;
+    const needsPatch =
+      ev.pin_enabled ||
+      ev.status !== 'active' ||
+      (ev.settings as EventSettings)?.welcomeTitle !== settings.welcomeTitle;
+    if (needsPatch) {
+      const { data, error } = await supabase
+        .from('events')
+        .update({
+          pin_enabled: false,
+          pin_hash: null,
+          pin_plain: null,
+          status: 'active',
+          settings: { ...((ev.settings || {}) as EventSettings), ...settings },
+        })
+        .eq('id', ev.id)
+        .select('*')
+        .single();
+      if (error) throw error;
+      return data as EventRow;
+    }
+    return ev;
+  }
+  const row = {
+    slug,
+    organizer_id: null,
+    title: 'Демо-лента',
+    pin_hash: null,
+    pin_plain: null,
+    pin_enabled: false,
+    status: 'active' as const,
+    plan: 'party' as const,
+    photo_limit: limits.party.photoLimit,
+    moderation_enabled: false,
+    settings,
+  };
+  const { data, error } = await supabase.from('events').insert(row).select('*').single();
+  if (error) throw error;
+  return data as EventRow;
+}
+
 /** Legacy: one event from env for existing wedding deployment */
 export async function ensureLegacyEvent(): Promise<EventRow | null> {
   const slug = (process.env.LEGACY_EVENT_SLUG || 'main').trim().toLowerCase();

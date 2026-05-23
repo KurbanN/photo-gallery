@@ -5,7 +5,7 @@ import { existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getSupabase } from './supabase.js';
-import { ensureLegacyEvent } from './events-db.js';
+import { ensureDemoEvent, ensureLegacyEvent } from './events-db.js';
 import { corsOrigins } from './middleware.js';
 import { guestRouter } from './routes/guest.js';
 import { legacyRouter } from './routes/legacy.js';
@@ -59,6 +59,11 @@ export function createApp() {
 
 async function main() {
   getSupabase();
+  try {
+    await ensureDemoEvent();
+  } catch (e) {
+    console.warn('[startup] demo event seed skipped:', e);
+  }
   try {
     await ensureLegacyEvent();
   } catch (e) {

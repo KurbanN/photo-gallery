@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, UserPlus, UserX } from 'lucide-react';
+import { usePageTitle } from '@/lib/brand';
 import { createClient } from '@/lib/supabase/client';
 import {
   fetchMe,
@@ -12,6 +13,7 @@ import {
 } from '@/lib/organizer-api';
 
 export default function AdminUsers() {
+  usePageTitle('Организаторы');
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [organizers, setOrganizers] = useState<AdminOrganizerRow[]>([]);

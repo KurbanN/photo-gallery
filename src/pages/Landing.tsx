@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom';
+import { APP_BRAND, usePageTitle } from '@/lib/brand';
 
 export default function Landing() {
+  usePageTitle();
+
   return (
     <div className="min-h-dvh flex flex-col">
       <header className="border-b border-line px-6 py-4 flex justify-between items-center">
-        <span className="font-serif text-xl text-ink">Guestroll</span>
+        <span className="font-serif text-xl text-ink">{APP_BRAND}</span>
         <Link to="/dashboard/login" className="text-xs uppercase tracking-[0.2em] text-muted hover:text-ink">
           Кабинет
         </Link>
@@ -23,7 +26,7 @@ export default function Landing() {
             Создать мероприятие
           </Link>
           <Link
-            to="/e/main"
+            to="/e/demo"
             className="flex-1 border border-ink py-3 text-xs font-semibold uppercase tracking-[0.2em] text-ink"
           >
             Демо-лента
@@ -44,8 +47,13 @@ export default function Landing() {
           <div>
             <p className="text-ink font-medium mb-1">Связаться</p>
             <p>
-              <a href="tel:+774711110010" className="text-ink hover:underline">
-                +7 747 111 00 10
+              <a
+                href="https://wa.clck.bar/77471110010"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ink hover:underline"
+              >
+                WhatsApp +7 747 111 00 10
               </a>
             </p>
           </div>

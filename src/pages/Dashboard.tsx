@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, Plus, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { APP_BRAND, usePageTitle } from '@/lib/brand';
 import { fetchMe, listEvents, type EventRow, type OrganizerProfile } from '@/lib/organizer-api';
 
 export default function Dashboard() {
+  usePageTitle('Кабинет');
   const navigate = useNavigate();
   const [profile, setProfile] = useState<OrganizerProfile | null>(null);
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -48,9 +50,10 @@ export default function Dashboard() {
     <div className="min-h-dvh bg-paper">
       <header className="border-b border-line px-6 py-4 flex justify-between items-center gap-4">
         <div>
-          <span className="font-serif text-xl">Кабинет</span>
+          <span className="font-serif text-xl">{APP_BRAND}</span>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-muted mt-0.5">Кабинет</p>
           {profile && (
-            <p className="text-[10px] uppercase tracking-[0.15em] text-muted mt-0.5">
+            <p className="text-[10px] uppercase tracking-[0.15em] text-muted mt-1">
               {profile.email} · {profile.role}
             </p>
           )}

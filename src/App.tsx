@@ -21,7 +21,8 @@ export default function App() {
         <Route path="/dashboard/events/:id" element={<EventManage />} />
         <Route path="/dashboard/admin" element={<AdminUsers />} />
         {/* Старые закладки: одностраничная свадьба → legacy slug */}
-        <Route path="/wedding" element={<Navigate to="/e/main" replace />} />
+        <Route path="/wedding" element={<Navigate to="/e/demo" replace />} />
+        <Route path="/e/main" element={<Navigate to="/e/demo" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

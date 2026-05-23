@@ -23,7 +23,7 @@ const QrPrintCard = forwardRef<HTMLDivElement, QrPrintCardProps>(function QrPrin
     welcomeSubtitle,
     pin,
     pinEnabled = true,
-    brandName = 'All Memories',
+    brandName = 'Allmemories',
   },
   ref,
 ) {

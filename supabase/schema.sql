@@ -1,4 +1,4 @@
--- Полная схема Guestroll / live-photo (новые установки)
+-- Полная схема Allmemories / live-photo (новые установки)
 create extension if not exists "pgcrypto";
 
 create table if not exists public.photos (

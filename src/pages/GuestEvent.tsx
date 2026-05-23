@@ -21,6 +21,7 @@ import {
   tryEnableContinuousFocus,
   tryFocusAtNormalizedPoint,
 } from '@/lib/camera';
+import { usePageTitle } from '@/lib/brand';
 import {
   clearStoredPin,
   downloadPhotoFile,
@@ -72,7 +73,8 @@ export default function GuestEvent() {
   const [cameraOpening, setCameraOpening] = useState(false);
 
   const bgUrl = resolveBgUrl(eventPublic?.settings.loginBgUrl);
-  const welcomeTitle = eventPublic?.settings.welcomeTitle ?? 'Живая лента';
+  const welcomeTitle = eventPublic?.settings.welcomeTitle ?? 'Мероприятие';
+  usePageTitle(eventPublic ? welcomeTitle : undefined);
   const welcomeSubtitle =
     eventPublic?.settings.welcomeSubtitle ??
     'Введите код с карточки на столе, затем снимайте и смотрите фото гостей.';
@@ -84,6 +86,31 @@ export default function GuestEvent() {
       .then(setEventPublic)
       .catch((e) => setLoadErr(e instanceof Error ? e.message : 'Не найдено'));
   }, [slug]);
+
+  /** Демо и мероприятия без PIN — сразу в ленту */
+  useEffect(() => {
+    if (!slug || !eventPublic || eventPublic.pinRequired || pin) return;
+    let cancelled = false;
+    const enter = async () => {
+      setPinLoading(true);
+      setPinError('');
+      try {
+        await fetchPhotos(slug, '');
+        if (cancelled) return;
+        setStoredPin(slug, '');
+        setPin('');
+      } catch (err) {
+        if (cancelled) return;
+        setPinError(err instanceof Error ? err.message : 'Не удалось открыть демо');
+      } finally {
+        if (!cancelled) setPinLoading(false);
+      }
+    };
+    void enter();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, eventPublic, pin]);
 
   const discardPending = useCallback(() => {
     pendingBlobRef.current = null;
@@ -366,6 +393,13 @@ export default function GuestEvent() {
   }
 
   if (!pin) {
+    if (!eventPublic.pinRequired && pinLoading) {
+      return (
+        <div className="min-h-dvh flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted" />
+        </div>
+      );
+    }
     return (
       <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-16 bg-paper">
         {bgUrl ? (

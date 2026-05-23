@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import CreateEventSteps, { type CreateEventStep } from '@/components/CreateEventSteps';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
+import { usePageTitle } from '@/lib/brand';
 import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings } from '@/lib/event-branding';
 import { createEvent, uploadLoginBg } from '@/lib/organizer-api';
 
 export default function EventCreate() {
+  usePageTitle('Новое мероприятие');
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [plan, setPlan] = useState<'lite' | 'party' | 'premium'>('party');

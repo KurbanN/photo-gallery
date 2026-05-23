@@ -4,6 +4,7 @@ import { Copy, ExternalLink, Loader2, Trash2, Upload } from 'lucide-react';
 import EventManageTabs, { type EventManageTab } from '@/components/EventManageTabs';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
 import QrPrintCardSection from '@/components/QrPrintCardSection';
+import { usePageTitle } from '@/lib/brand';
 import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings } from '@/lib/event-branding';
 import { resolveBgUrl } from '@/lib/resolve-bg-url';
 import {
@@ -37,6 +38,8 @@ function parseTab(raw: string | null): EventManageTab {
 
 export default function EventManage() {
   const { id = '' } = useParams<{ id: string }>();
+  const [title, setTitle] = useState('');
+  usePageTitle(title || undefined);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseTab(searchParams.get('tab'));
@@ -47,7 +50,6 @@ export default function EventManage() {
 
   const [guestUrl, setGuestUrl] = useState('');
   const [slug, setSlug] = useState('');
-  const [title, setTitle] = useState('');
   const [status, setStatus] = useState('');
   const [pinEnabled, setPinEnabled] = useState(true);
   const [guestPin, setGuestPin] = useState('');

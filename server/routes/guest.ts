@@ -2,6 +2,8 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import {
+  DEMO_EVENT_SLUG,
+  ensureDemoEvent,
   eventIsUploadAllowed,
   getEventBySlug,
   verifyEventPin,
@@ -36,6 +38,13 @@ export function guestRouter(): Router {
 
   router.get('/:slug/public', async (req, res) => {
     try {
+      if (req.params.slug.toLowerCase() === DEMO_EVENT_SLUG) {
+        try {
+          await ensureDemoEvent();
+        } catch (e) {
+          console.error('[demo] ensure failed:', e);
+        }
+      }
       const event = await getEventBySlug(req.params.slug);
       if (!event) {
         res.status(404).json({ error: 'Мероприятие не найдено' });
