@@ -11,6 +11,12 @@ export function publicUrlForPath(storagePath: string): string {
   return data.publicUrl;
 }
 
+/** Обход кэша CDN/браузера при повторной загрузке в тот же путь Storage. */
+export function loginBgUrlWithCacheBust(publicUrl: string): string {
+  const base = publicUrl.split('?')[0] ?? publicUrl;
+  return `${base}?v=${Date.now()}`;
+}
+
 export function mimeFromFilename(filename: string): string {
   const ext = path.extname(filename).toLowerCase();
   const map: Record<string, string> = {
@@ -114,12 +120,18 @@ export async function uploadEventLoginBg(
   const supabase = getSupabase();
   const bucket = getBucket();
   const contentType = mimetype.startsWith('image/') ? mimetype : mimeFromFilename(safeExt);
+  const stalePaths = ['.jpg', '.jpeg', '.png', '.webp']
+    .filter((ext) => ext !== safeExt)
+    .map((ext) => `events/${eventId}/branding/login-bg${ext}`);
+  if (stalePaths.length) {
+    await supabase.storage.from(bucket).remove(stalePaths).catch(() => {});
+  }
   const { error: upErr } = await supabase.storage.from(bucket).upload(storagePath, buffer, {
     contentType,
     upsert: true,
   });
   if (upErr) throw upErr;
-  return publicUrlForPath(storagePath);
+  return loginBgUrlWithCacheBust(publicUrlForPath(storagePath));
 }
 
 export async function deletePhotoForEvent(eventId: string, photoId: string): Promise<void> {

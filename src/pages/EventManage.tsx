@@ -172,7 +172,7 @@ export default function EventManage() {
     setBgUploading(true);
     try {
       await updateEvent(id, {
-        settings: buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle),
+        settings: { ...buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle), loginBgUrl: '' },
       });
       setSavedLoginBgUrl('');
       if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
