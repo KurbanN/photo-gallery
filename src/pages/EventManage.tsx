@@ -427,6 +427,7 @@ export default function EventManage() {
                 welcomeSubtitle={welcomeSubtitle}
                 guestPin={guestPin}
                 pinEnabled={pinEnabled}
+                bgUrl={previewBgUrl}
               />
             )}
 

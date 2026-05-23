@@ -13,6 +13,7 @@ type Props = {
   welcomeSubtitle: string;
   guestPin: string;
   pinEnabled: boolean;
+  bgUrl?: string | null;
 };
 
 const PREVIEW_MAX_WIDTH = 320;
@@ -26,6 +27,7 @@ export default function QrPrintCardSection({
   welcomeSubtitle,
   guestPin,
   pinEnabled,
+  bgUrl = null,
 }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState<'png' | 'print' | null>(null);
@@ -87,6 +89,7 @@ export default function QrPrintCardSection({
             welcomeSubtitle={welcomeSubtitle}
             pin={guestPin}
             pinEnabled={pinEnabled}
+            bgUrl={bgUrl}
           />
         </div>
       </div>

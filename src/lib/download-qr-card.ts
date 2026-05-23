@@ -5,6 +5,7 @@ export async function downloadQrPrintCard(element: HTMLElement, filename: string
     pixelRatio: 3,
     backgroundColor: '#faf9f7',
     cacheBust: true,
+    useCORS: true,
   });
   const a = document.createElement('a');
   a.href = dataUrl;

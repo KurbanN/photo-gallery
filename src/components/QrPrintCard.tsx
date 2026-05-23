@@ -13,6 +13,8 @@ export type QrPrintCardProps = {
   pin?: string;
   pinEnabled?: boolean;
   brandName?: string;
+  /** Фон как на экране входа гостя */
+  bgUrl?: string | null;
 };
 
 const QrPrintCard = forwardRef<HTMLDivElement, QrPrintCardProps>(function QrPrintCard(
@@ -24,6 +26,7 @@ const QrPrintCard = forwardRef<HTMLDivElement, QrPrintCardProps>(function QrPrin
     pin,
     pinEnabled = true,
     brandName = 'Allmemories',
+    bgUrl = null,
   },
   ref,
 ) {
@@ -52,6 +55,20 @@ const QrPrintCard = forwardRef<HTMLDivElement, QrPrintCardProps>(function QrPrin
         fontFamily: "'Montserrat', system-ui, sans-serif",
       }}
     >
+      {bgUrl ? (
+        <div
+          className="pointer-events-none absolute inset-0 bg-cover bg-center scale-105"
+          style={{ backgroundImage: `url(${bgUrl})` }}
+          aria-hidden
+        />
+      ) : null}
+      <div
+        className={`pointer-events-none absolute inset-0 ${
+          bgUrl ? 'bg-gradient-to-b from-paper/88 via-paper/78 to-paper/90' : ''
+        }`}
+        aria-hidden
+      />
+
       {/* рамка */}
       <div
         className="pointer-events-none absolute inset-[28px] border border-ink/25"
