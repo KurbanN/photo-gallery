@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Camera,
   Check,
   FileImage,
   Grid3x3,
   Download,
+  Home,
   Loader2,
   LogOut,
   RefreshCw,
@@ -39,7 +40,9 @@ import {
 type Tab = 'shoot' | 'feed';
 
 export default function GuestEvent() {
+  const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
+  const isDemo = slug === 'demo';
   const [eventPublic, setEventPublic] = useState<EventPublic | null>(null);
   const [loadErr, setLoadErr] = useState('');
   const [pin, setPin] = useState<string | null>(() => (slug ? getStoredPin(slug) : null));
@@ -265,9 +268,13 @@ export default function GuestEvent() {
   const logout = () => {
     discardPending();
     clearStoredPin(slug);
-    setPin(null);
     setPhotos([]);
     setLightbox(null);
+    if (isDemo) {
+      navigate('/');
+      return;
+    }
+    setPin(null);
   };
 
   const takePhoto = async () => {
@@ -500,9 +507,21 @@ export default function GuestEvent() {
           <p className="font-serif text-lg text-ink">{welcomeTitle}</p>
           <p className="text-[10px] uppercase tracking-[0.2em] text-muted">{headerSub}</p>
         </div>
-        <button type="button" onClick={logout} className="p-2 text-muted" aria-label="Выйти">
-          <LogOut className="w-5 h-5" />
-        </button>
+        {isDemo ? (
+          <button
+            type="button"
+            onClick={logout}
+            className="flex items-center gap-1.5 p-2 text-muted hover:text-ink"
+            aria-label="На главную"
+          >
+            <Home className="w-5 h-5" />
+            <span className="text-[10px] uppercase tracking-[0.15em]">Главная</span>
+          </button>
+        ) : (
+          <button type="button" onClick={logout} className="p-2 text-muted hover:text-ink" aria-label="Выйти">
+            <LogOut className="w-5 h-5" />
+          </button>
+        )}
       </header>
 
       {uploadNotice && (
