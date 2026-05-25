@@ -1,4 +1,5 @@
 import { getBucket, getSupabase } from './supabase.js';
+import { seedDemoPhotos } from './demo-seed.js';
 import { hashPin, verifyPin } from './pin.js';
 import type { EventPlan, EventRow, EventSettings } from './types.js';
 import { PLAN_LIMITS as limits } from './types.js';
@@ -268,8 +269,10 @@ export async function ensureDemoEvent(): Promise<EventRow> {
         .select('*')
         .single();
       if (error) throw error;
+      await seedDemoPhotos(data as EventRow);
       return data as EventRow;
     }
+    await seedDemoPhotos(ev);
     return ev;
   }
   const row = {
@@ -287,7 +290,9 @@ export async function ensureDemoEvent(): Promise<EventRow> {
   };
   const { data, error } = await supabase.from('events').insert(row).select('*').single();
   if (error) throw error;
-  return data as EventRow;
+  const created = data as EventRow;
+  await seedDemoPhotos(created);
+  return created;
 }
 
 /** Legacy: one event from env for existing wedding deployment */

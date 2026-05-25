@@ -22,6 +22,7 @@ import {
   tryFocusAtNormalizedPoint,
 } from '@/lib/camera';
 import { usePageTitle } from '@/lib/brand';
+import { buildDemoStaticPhotos, isDemoStaticPhotoId } from '@/lib/demo-static-photos';
 import {
   clearStoredPin,
   downloadPhotoFile,
@@ -87,9 +88,9 @@ export default function GuestEvent() {
       .catch((e) => setLoadErr(e instanceof Error ? e.message : 'Не найдено'));
   }, [slug]);
 
-  /** Демо и мероприятия без PIN — сразу в ленту */
+  /** Демо и мероприятия без PIN — сразу в ленту, без экрана входа */
   useEffect(() => {
-    if (!slug || !eventPublic || eventPublic.pinRequired || pin) return;
+    if (!slug || !eventPublic || eventPublic.pinRequired || pin !== null) return;
     let cancelled = false;
     const enter = async () => {
       setPinLoading(true);
@@ -99,6 +100,7 @@ export default function GuestEvent() {
         if (cancelled) return;
         setStoredPin(slug, '');
         setPin('');
+        if (slug === 'demo') setTab('feed');
       } catch (err) {
         if (cancelled) return;
         setPinError(err instanceof Error ? err.message : 'Не удалось открыть демо');
@@ -121,17 +123,27 @@ export default function GuestEvent() {
   }, []);
 
   const loadFeed = useCallback(async () => {
-    if (!pin || !slug) return;
+    if (pin === null || !slug) return;
     try {
       setFeedError('');
-      setPhotos(await fetchPhotos(slug, pin));
+      const fromApi = await fetchPhotos(slug, pin);
+      if (slug === 'demo' && fromApi.length === 0) {
+        setPhotos(buildDemoStaticPhotos());
+      } else {
+        setPhotos(fromApi);
+      }
     } catch (e) {
-      setFeedError(e instanceof Error ? e.message : 'Ошибка ленты');
+      if (slug === 'demo') {
+        setFeedError('');
+        setPhotos(buildDemoStaticPhotos());
+      } else {
+        setFeedError(e instanceof Error ? e.message : 'Ошибка ленты');
+      }
     }
   }, [pin, slug]);
 
   useEffect(() => {
-    if (!pin) return;
+    if (pin === null) return;
     loadFeed();
     const t = window.setInterval(loadFeed, 4500);
     return () => window.clearInterval(t);
@@ -151,7 +163,7 @@ export default function GuestEvent() {
   }, [discardPending]);
 
   const openCamera = useCallback(async () => {
-    if (!pin || streamRef.current || cameraOpeningRef.current) return;
+    if (pin === null || streamRef.current || cameraOpeningRef.current) return;
     const gen = cameraGeneration.current;
     cameraOpeningRef.current = true;
     setShootError('');
@@ -221,7 +233,7 @@ export default function GuestEvent() {
   );
 
   useEffect(() => {
-    if (tab !== 'shoot' || !pin) stopCamera();
+    if (tab !== 'shoot' || pin === null) stopCamera();
   }, [tab, pin, stopCamera]);
 
   const handlePinSubmit = async (e: React.FormEvent) => {
@@ -285,7 +297,7 @@ export default function GuestEvent() {
     blob: Blob,
     opts?: { afterCamera?: boolean; batch?: { index: number; total: number }; goToFeed?: boolean },
   ) => {
-    if (!pin) return;
+    if (pin === null) return;
     if (!eventPublic?.uploadsOpen) {
       setShootError(eventPublic?.uploadsClosedReason || 'Загрузка закрыта');
       return;
@@ -332,7 +344,7 @@ export default function GuestEvent() {
   };
 
   const triggerImageUpload = () => {
-    if (!pin || !eventPublic?.uploadsOpen) {
+    if (pin === null || !eventPublic?.uploadsOpen) {
       setShootError(eventPublic?.uploadsClosedReason || 'Загрузка закрыта');
       return;
     }
@@ -359,7 +371,15 @@ export default function GuestEvent() {
   };
 
   const handleDownload = async (p: PhotoEntry) => {
-    if (!pin) return;
+    if (pin === null) return;
+    if (isDemoStaticPhotoId(p.id)) {
+      const a = document.createElement('a');
+      a.href = p.url;
+      a.download = `demo-${p.id.slice(12)}.jpg`;
+      a.rel = 'noopener';
+      a.click();
+      return;
+    }
     setDownloadBusy(true);
     try {
       const blob = await downloadPhotoFile(slug, pin, p.id);
@@ -392,11 +412,39 @@ export default function GuestEvent() {
     );
   }
 
-  if (!pin) {
-    if (!eventPublic.pinRequired && pinLoading) {
+  if (pin === null) {
+    if (!eventPublic.pinRequired) {
       return (
-        <div className="min-h-dvh flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted" />
+        <div className="min-h-dvh flex flex-col items-center justify-center gap-4 px-6 bg-paper">
+          {pinLoading ? (
+            <Loader2 className="h-8 w-8 animate-spin text-muted" />
+          ) : (
+            <>
+              <p className="text-center text-sm text-red-700">{pinError || 'Не удалось открыть ленту'}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setPinError('');
+                  void (async () => {
+                    setPinLoading(true);
+                    try {
+                      await fetchPhotos(slug, '');
+                      setStoredPin(slug, '');
+                      setPin('');
+                      if (slug === 'demo') setTab('feed');
+                    } catch (err) {
+                      setPinError(err instanceof Error ? err.message : 'Ошибка');
+                    } finally {
+                      setPinLoading(false);
+                    }
+                  })();
+                }}
+                className="bg-ink px-6 py-3 text-xs uppercase text-paper"
+              >
+                Повторить
+              </button>
+            </>
+          )}
         </div>
       );
     }
@@ -420,20 +468,16 @@ export default function GuestEvent() {
           <p className="mb-2 text-center font-serif text-3xl text-ink md:text-4xl">{welcomeTitle}</p>
           <p className="mb-8 max-w-sm text-center text-sm leading-relaxed text-muted">{welcomeSubtitle}</p>
           <form onSubmit={handlePinSubmit} className="w-full space-y-4">
-            {eventPublic.pinRequired && (
-              <>
-                <label className="block text-[11px] uppercase tracking-[0.2em] text-muted">Код мероприятия</label>
-                <input
-                  type="password"
-                  autoComplete="one-time-code"
-                  inputMode="numeric"
-                  value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value)}
-                  placeholder="••••"
-                  className="w-full border border-line/90 bg-white/95 px-4 py-3 text-center text-lg tracking-[0.3em] shadow-sm outline-none focus:border-ink"
-                />
-              </>
-            )}
+            <label className="block text-[11px] uppercase tracking-[0.2em] text-muted">Код мероприятия</label>
+            <input
+              type="password"
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value)}
+              placeholder="••••"
+              className="w-full border border-line/90 bg-white/95 px-4 py-3 text-center text-lg tracking-[0.3em] shadow-sm outline-none focus:border-ink"
+            />
             {pinError && <p className="text-center text-sm text-red-700">{pinError}</p>}
             <button
               type="submit"

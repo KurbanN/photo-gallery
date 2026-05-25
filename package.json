@@ -7,8 +7,8 @@
     "dev": "concurrently -k \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "tsx watch server/index.ts",
     "dev:client": "vite --port 5174 --host 0.0.0.0",
-    "build": "vite build && tsc -p tsconfig.server.json",
-    "build:pages": "vite build && node scripts/gh-pages-postbuild.mjs",
+    "build": "node scripts/copy-demo-photos.mjs && vite build && tsc -p tsconfig.server.json",
+    "build:pages": "node scripts/copy-demo-photos.mjs && vite build && node scripts/gh-pages-postbuild.mjs",
     "start": "node dist-server/index.js",
     "preview": "vite preview --port 5174",
     "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json"

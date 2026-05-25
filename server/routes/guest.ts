@@ -42,7 +42,7 @@ export function guestRouter(): Router {
         try {
           await ensureDemoEvent();
         } catch (e) {
-          console.error('[demo] ensure failed:', e);
+          console.error('[demo] ensure/seed failed:', e);
         }
       }
       const event = await getEventBySlug(req.params.slug);
@@ -75,6 +75,13 @@ export function guestRouter(): Router {
   router.get('/:slug/photos', async (req, res) => {
     const pin = req.header('x-event-pin');
     try {
+      if (req.params.slug.toLowerCase() === DEMO_EVENT_SLUG) {
+        try {
+          await ensureDemoEvent();
+        } catch (e) {
+          console.error('[demo] ensure/seed failed:', e);
+        }
+      }
       const event = await getEventBySlug(req.params.slug);
       if (!event) {
         res.status(404).json({ error: 'Мероприятие не найдено' });
