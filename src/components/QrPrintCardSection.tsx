@@ -60,14 +60,10 @@ export default function QrPrintCardSection({
   };
 
   return (
-    <div className="border border-line p-4 space-y-4">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted mb-1">Карточка для печати</p>
-        <p className="text-sm text-muted">
-          Готовый макет A6: QR и {pinEnabled && guestPin ? 'код для гостей' : 'инструкция'}.
-          Положите на стол или распечатайте.
-        </p>
-      </div>
+    <div className="space-y-4">
+      <p className="text-sm leading-relaxed text-muted">
+        Макет A6 для столов: QR и {pinEnabled && guestPin ? 'код гостей' : 'инструкция'}.
+      </p>
 
       <div
         className="mx-auto overflow-hidden rounded-sm border border-line bg-line/30 shadow-inner"
@@ -103,21 +99,21 @@ export default function QrPrintCardSection({
         </p>
       )}
 
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+      <div className="flex flex-col flex-wrap gap-2 sm:flex-row">
         <button
           type="button"
           disabled={!guestUrl || busy !== null}
           onClick={() => void onDownloadCard()}
-          className="bg-ink text-paper px-4 py-3 text-xs uppercase flex items-center justify-center gap-2 disabled:opacity-60"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-ink px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-paper disabled:opacity-50"
         >
           {busy === 'png' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-          Скачать карточку PNG
+          PNG карточка
         </button>
         <button
           type="button"
           disabled={!guestUrl || busy !== null}
           onClick={onPrint}
-          className="border border-ink px-4 py-3 text-xs uppercase flex items-center justify-center gap-2 disabled:opacity-60"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-ink px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink disabled:opacity-50"
         >
           {busy === 'print' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
           Печать
@@ -126,7 +122,7 @@ export default function QrPrintCardSection({
           type="button"
           disabled={busy !== null}
           onClick={() => void downloadQr(eventId, slug)}
-          className="border border-line px-4 py-3 text-xs uppercase flex items-center justify-center gap-2 text-muted"
+          className="inline-flex items-center justify-center gap-2 border border-line px-4 py-3 text-[10px] uppercase tracking-[0.15em] text-muted disabled:opacity-50"
         >
           <Download className="w-4 h-4" />
           Только QR

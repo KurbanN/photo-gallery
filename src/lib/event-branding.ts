@@ -1,7 +1,7 @@
 import type { EventSettings } from './organizer-api';
 
 export const DEFAULT_GUEST_SUBTITLE =
-  'Введите код с карточки на столе, затем снимайте и смотрите фото гостей.';
+  'Введите код с карточки на столе, чтобы просматривать и загружать фото с мероприятия';
 
 export function buildGuestScreenSettings(
   eventTitle: string,

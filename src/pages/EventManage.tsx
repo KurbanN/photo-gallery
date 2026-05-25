@@ -1,9 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Copy, ExternalLink, Loader2, Trash2, Upload } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Copy, ExternalLink, Grid3x3, Loader2, Trash2, Upload } from 'lucide-react';
 import EventManageTabs, { type EventManageTab } from '@/components/EventManageTabs';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
 import QrPrintCardSection from '@/components/QrPrintCardSection';
+import {
+  BtnPrimary,
+  BtnSecondary,
+  OrganizerField,
+  OrganizerHeader,
+  OrganizerPageShell,
+  OrganizerSection,
+  StatusMessage,
+  inputClass,
+  textareaClass,
+} from '@/components/organizer/organizer-ui';
 import { usePageTitle } from '@/lib/brand';
 import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings } from '@/lib/event-branding';
 import { resolveBgUrl } from '@/lib/resolve-bg-url';
@@ -20,6 +31,7 @@ import {
   type OrgPhoto,
   type OrganizerProfile,
 } from '@/lib/organizer-api';
+
 const VALID_TABS: EventManageTab[] = ['gallery', 'tools', 'guest'];
 
 function readSettings(raw: EventSettings | undefined, title: string) {
@@ -34,6 +46,26 @@ function readSettings(raw: EventSettings | undefined, title: string) {
 function parseTab(raw: string | null): EventManageTab {
   if (raw && VALID_TABS.includes(raw as EventManageTab)) return raw as EventManageTab;
   return 'gallery';
+}
+
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|mov|webm|m4v|3gp)(\?|$)/i.test(url);
+}
+
+function PinDisplay({ code }: { code: string }) {
+  const digits = code.padEnd(4, ' ').slice(0, 4).split('');
+  return (
+    <div className="flex justify-center gap-2 sm:justify-start">
+      {digits.map((d, i) => (
+        <span
+          key={i}
+          className="flex h-14 w-11 items-center justify-center border border-line bg-paper font-semibold text-xl tracking-widest text-ink sm:h-16 sm:w-12"
+        >
+          {d.trim() || '·'}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export default function EventManage() {
@@ -168,7 +200,7 @@ export default function EventManage() {
   };
 
   const removeBackground = async () => {
-    if (!id || !confirm('Убрать фон? Будет нейтральный экран.')) return;
+    if (!id || !confirm('Убрать фон? Будет тёмный экран входа.')) return;
     setBgUploading(true);
     try {
       await updateEvent(id, {
@@ -212,7 +244,7 @@ export default function EventManage() {
     if (!guestPin) return;
     try {
       await navigator.clipboard.writeText(guestPin);
-      setPinMsg('Скопировано');
+      setPinMsg('Код скопирован');
     } catch {
       setPinMsg('Не удалось скопировать');
     }
@@ -220,248 +252,272 @@ export default function EventManage() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center">
-        <Loader2 className="animate-spin" />
+      <div className="flex min-h-dvh items-center justify-center bg-paper">
+        <Loader2 className="h-8 w-8 animate-spin text-muted" />
       </div>
     );
   }
 
-  const guestPreviewUrl = guestUrl;
+  const pageMeta = (
+    <>
+      <span className="uppercase tracking-[0.12em]">{status}</span>
+      {' · '}
+      <a
+        href={guestUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-1 text-ink underline decoration-line hover:decoration-ink"
+      >
+        /e/{slug}
+        <ExternalLink className="h-3 w-3" />
+      </a>
+    </>
+  );
 
   return (
-    <div className="min-h-dvh bg-paper pb-12 flex flex-col">
-      <header className="border-b border-line px-6 py-4 shrink-0">
-        <Link to="/dashboard" className="text-xs uppercase text-muted">
-          ← Мероприятия
-        </Link>
-        <h1 className="font-serif text-2xl mt-2">{title}</h1>
-        <p className="text-xs text-muted mt-1">
-          {status} ·{' '}
-          <a href={guestUrl} target="_blank" rel="noreferrer" className="underline inline-flex items-center gap-1">
-            {guestUrl}
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        </p>
-      </header>
+    <OrganizerPageShell>
+      <OrganizerHeader backTo="/dashboard" backLabel="Мероприятия" title={title} meta={pageMeta} />
 
       <EventManageTabs active={tab} onChange={setTab} galleryCount={photos.length} />
 
-      {error && tab !== 'guest' && <p className="px-6 pt-4 text-red-700 text-sm max-w-3xl mx-auto w-full">{error}</p>}
+      {error && tab !== 'guest' && (
+        <p className="mx-auto max-w-3xl px-4 pt-4 text-sm text-red-700">{error}</p>
+      )}
 
-      <main className="flex-1 max-w-3xl mx-auto w-full">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6">
+        {tab === 'gallery' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
+                <Grid3x3 className="mr-1 inline h-3.5 w-3.5" />
+                {photos.length} в галерее
+              </p>
+              <BtnSecondary onClick={() => void load()} className="!w-auto !py-2">
+                Обновить
+              </BtnSecondary>
+            </div>
+
+            {photos.length === 0 ? (
+              <div className="border border-dashed border-line px-6 py-16 text-center">
+                <p className="font-serif text-lg text-ink">Пока пусто</p>
+                <p className="mt-2 text-sm text-muted">
+                  Когда гости загрузят фото, они появятся здесь и в общей ленте.
+                </p>
+                <a
+                  href={guestUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-6 inline-block text-[10px] uppercase tracking-[0.2em] text-ink underline"
+                >
+                  Открыть страницу гостя
+                </a>
+              </div>
+            ) : (
+              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {photos.map((p) => {
+                  const video = isVideoUrl(p.url);
+                  return (
+                    <li key={p.id} className="group border border-line bg-paper">
+                      <div className="relative aspect-square overflow-hidden bg-line/30">
+                        {video ? (
+                          <>
+                            <video src={p.url} className="h-full w-full object-cover" muted preload="metadata" />
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-[10px] uppercase tracking-[0.2em] text-white">
+                              Видео
+                            </span>
+                          </>
+                        ) : (
+                          <img src={p.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm('Удалить из галереи?')) return;
+                          await deleteOrgPhoto(id, p.id);
+                          await load();
+                        }}
+                        className="flex w-full items-center justify-center gap-1 py-2 text-[10px] uppercase tracking-[0.15em] text-red-700 opacity-80 transition-opacity group-hover:opacity-100"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Удалить
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+
         {tab === 'guest' && (
-          <section className="px-6 py-8">
-            <div className="grid gap-8 md:grid-cols-[minmax(0,240px)_1fr]">
+          <div className="space-y-6">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,220px)_1fr]">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted mb-2">Предпросмотр</p>
+                <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted">Предпросмотр входа</p>
                 <GuestLoginPreview
                   bgUrl={previewBgUrl}
                   welcomeTitle={welcomeTitle}
                   welcomeSubtitle={welcomeSubtitle}
                   pinRequired={pinEnabled}
-                  className="w-full mx-auto"
+                  pinPreview={pinDraft || guestPin || '1234'}
+                  className="mx-auto w-full max-w-[220px]"
                 />
                 <a
-                  href={guestPreviewUrl}
+                  href={guestUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-3 block text-center text-[10px] uppercase text-muted underline"
+                  className="mt-3 block text-center text-[10px] uppercase tracking-[0.15em] text-muted underline hover:text-ink"
                 >
-                  Открыть страницу гостя
+                  Открыть как гость
                 </a>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs uppercase text-muted">Заголовок на экране</label>
-                  <input
-                    value={welcomeTitle}
-                    onChange={(e) => setWelcomeTitle(e.target.value)}
-                    className="w-full border border-line px-3 py-2 mt-1"
-                    placeholder={title}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs uppercase text-muted">Подзаголовок</label>
-                  <textarea
-                    value={welcomeSubtitle}
-                    onChange={(e) => setWelcomeSubtitle(e.target.value)}
-                    rows={3}
-                    className="w-full border border-line px-3 py-2 mt-1 text-sm"
-                  />
-                </div>
-                <button
-                  type="button"
-                  disabled={brandingSaving}
-                  onClick={() => void saveBrandingText()}
-                  className="w-full border border-ink py-2 text-xs uppercase disabled:opacity-60"
+
+              <div className="space-y-6">
+                <OrganizerSection title="Тексты на экране входа">
+                  <OrganizerField label="Заголовок">
+                    <input
+                      value={welcomeTitle}
+                      onChange={(e) => setWelcomeTitle(e.target.value)}
+                      className={inputClass}
+                      placeholder={title}
+                    />
+                  </OrganizerField>
+                  <OrganizerField label="Подзаголовок">
+                    <textarea
+                      value={welcomeSubtitle}
+                      onChange={(e) => setWelcomeSubtitle(e.target.value)}
+                      rows={3}
+                      className={textareaClass}
+                    />
+                  </OrganizerField>
+                  <BtnPrimary disabled={brandingSaving} onClick={() => void saveBrandingText()}>
+                    {brandingSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    Сохранить тексты
+                  </BtnPrimary>
+                </OrganizerSection>
+
+                <OrganizerSection
+                  title="Фон экрана входа"
+                  description="Как на свадебном макете: фото на весь экран с затемнением. JPG или PNG, до 8 МБ."
                 >
-                  {brandingSaving ? <Loader2 className="inline w-4 h-4 animate-spin" /> : null}
-                  Сохранить тексты
-                </button>
-                <div className="pt-2 border-t border-line">
-                  <label className="text-xs uppercase text-muted">Фон (фото)</label>
                   <input
                     ref={fileRef}
                     type="file"
                     accept="image/*"
-                    className="mt-2 block w-full text-sm"
+                    className="block w-full text-sm text-muted file:mr-3 file:border-0 file:bg-ink file:px-3 file:py-2 file:text-[10px] file:uppercase file:tracking-[0.1em] file:text-paper"
                     onChange={(e) => onPickBackground(e.target.files?.[0])}
                   />
-                  <p className="text-[11px] text-muted mt-1">JPG или PNG, до 8 МБ. Сначала смотрите предпросмотр слева.</p>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      type="button"
-                      disabled={bgUploading}
-                      onClick={() => void applyBackground()}
-                      className="flex-1 bg-ink text-paper py-3 text-xs uppercase flex justify-center gap-2 disabled:opacity-60"
-                    >
-                      {bgUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  <div className="flex flex-wrap gap-2">
+                    <BtnPrimary disabled={bgUploading} onClick={() => void applyBackground()} className="flex-1">
+                      {bgUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                       Сохранить фон
-                    </button>
+                    </BtnPrimary>
                     {(savedLoginBgUrl || previewBlobUrl) && (
-                      <button
-                        type="button"
-                        disabled={bgUploading}
-                        onClick={() => void removeBackground()}
-                        className="border border-line px-3 py-3 text-xs uppercase text-muted disabled:opacity-60"
-                      >
-                        Убрать
-                      </button>
+                      <BtnSecondary disabled={bgUploading} onClick={() => void removeBackground()}>
+                        Убрать фон
+                      </BtnSecondary>
                     )}
                   </div>
-                </div>
+                </OrganizerSection>
+
                 {brandingMsg && (
-                  <p className={`text-sm ${brandingMsg.includes('Ошиб') ? 'text-red-700' : 'text-emerald-800'}`}>
-                    {brandingMsg}
-                  </p>
+                  <StatusMessage
+                    text={brandingMsg}
+                    error={brandingMsg.includes('Ошиб') || brandingMsg.includes('ошиб')}
+                  />
                 )}
               </div>
             </div>
-          </section>
-        )}
-
-        {tab === 'gallery' && (
-          <section className="px-6 py-8">
-            {photos.length === 0 ? (
-              <p className="text-sm text-muted text-center py-12">Пока нет фото от гостей.</p>
-            ) : (
-              <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {photos.map((p) => (
-                  <li key={p.id} className="border border-line">
-                    <img src={p.url} alt="" className="aspect-square object-cover w-full" />
-                    <div className="p-2">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!confirm('Удалить фото?')) return;
-                          await deleteOrgPhoto(id, p.id);
-                          await load();
-                        }}
-                        className="w-full text-red-700 py-1 flex justify-center items-center gap-1 text-[10px] uppercase"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        Удалить
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          </div>
         )}
 
         {tab === 'tools' && (
-          <section className="px-6 py-8 space-y-6">
-            <div className="border border-line p-4 space-y-3">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted">Код для гостей (PIN)</p>
+          <div className="space-y-6">
+            <OrganizerSection
+              title="Код для гостей"
+              description="Гости вводят код на экране «Закрытый альбом». Напечатайте его на QR-карточке."
+            >
               {guestPin ? (
-                <p className="text-3xl tracking-[0.35em] font-semibold text-ink">{guestPin}</p>
+                <PinDisplay code={pinDraft || guestPin} />
               ) : (
-                <p className="text-sm text-muted">
-                  Код не сохранён в системе (старое мероприятие). Задайте новый ниже — гости смогут входить с ним.
-                </p>
+                <p className="text-sm text-muted">Задайте код ниже — он появится на карточке и у гостей.</p>
               )}
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <input
                   value={pinDraft}
-                  onChange={(e) => setPinDraft(e.target.value)}
-                  className="flex-1 min-w-[8rem] border border-line px-3 py-2 text-sm tracking-widest"
-                  placeholder="Новый код"
+                  onChange={(e) => setPinDraft(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                  className={`${inputClass} sm:max-w-[10rem] tracking-[0.35em]`}
+                  placeholder="0000"
+                  inputMode="numeric"
                   autoComplete="off"
                 />
-                <button
-                  type="button"
-                  disabled={pinSaving}
-                  onClick={() => void savePin()}
-                  className="border border-ink px-4 py-2 text-xs uppercase disabled:opacity-60"
-                >
-                  {pinSaving ? <Loader2 className="w-4 h-4 animate-spin inline" /> : null}
+                <BtnSecondary disabled={pinSaving} onClick={() => void savePin()}>
+                  {pinSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Сохранить код
-                </button>
+                </BtnSecondary>
                 {guestPin && (
-                  <button
-                    type="button"
-                    onClick={() => void copyPin()}
-                    className="border border-line px-3 py-2 text-xs uppercase flex items-center gap-1"
-                  >
-                    <Copy className="w-3 h-3" />
+                  <BtnSecondary onClick={() => void copyPin()}>
+                    <Copy className="h-3.5 w-3.5" />
                     Копировать
-                  </button>
+                  </BtnSecondary>
                 )}
               </div>
               {pinMsg && (
-                <p className={`text-sm ${pinMsg.includes('Ошиб') || pinMsg.includes('Не удал') ? 'text-red-700' : 'text-emerald-800'}`}>
-                  {pinMsg}
-                </p>
+                <StatusMessage
+                  text={pinMsg}
+                  error={pinMsg.includes('Ошиб') || pinMsg.includes('Не удал')}
+                />
               )}
-              {!pinEnabled && <p className="text-xs text-muted">Вход по коду отключён для этого мероприятия.</p>}
-            </div>
+              {!pinEnabled && (
+                <p className="text-xs text-amber-800">Вход по коду отключён для этого мероприятия.</p>
+              )}
+            </OrganizerSection>
 
             {guestUrl && (
-              <QrPrintCardSection
-                eventId={id}
-                slug={slug}
-                guestUrl={guestUrl}
-                eventTitle={title}
-                welcomeTitle={welcomeTitle}
-                welcomeSubtitle={welcomeSubtitle}
-                guestPin={guestPin}
-                pinEnabled={pinEnabled}
-                bgUrl={previewBgUrl}
-              />
+              <OrganizerSection title="QR-карточка для столов">
+                <QrPrintCardSection
+                  eventId={id}
+                  slug={slug}
+                  guestUrl={guestUrl}
+                  eventTitle={title}
+                  welcomeTitle={welcomeTitle}
+                  welcomeSubtitle={welcomeSubtitle}
+                  guestPin={guestPin}
+                  pinEnabled={pinEnabled}
+                  bgUrl={previewBgUrl}
+                />
+              </OrganizerSection>
             )}
 
-            <div className="border border-red-200 bg-red-50/50 p-4">
-              <p className="text-sm text-ink mb-3">Остановить приём новых фото от гостей. Ленту можно смотреть.</p>
-              <button
-                type="button"
+            <OrganizerSection
+              title="Закрыть приём файлов"
+              description="Гости не смогут загружать новые фото и видео. Галерею можно смотреть."
+              className="border-amber-200 bg-amber-50/40"
+            >
+              <BtnSecondary
                 onClick={async () => {
-                  if (!confirm('Закрыть приём фото?')) return;
+                  if (!confirm('Закрыть приём фото и видео от гостей?')) return;
                   await endEvent(id);
                   await load();
                 }}
-                className="border border-red-800 text-red-800 px-4 py-2 text-xs uppercase"
+                className="!border-amber-800 !text-amber-900"
               >
                 Закрыть ленту
-              </button>
-            </div>
+              </BtnSecondary>
+            </OrganizerSection>
 
             {profile?.role === 'admin' && (
-              <div className="border border-red-300 bg-red-50 p-4">
-                <p className="text-sm text-ink mb-3">
-                  Удалить мероприятие навсегда: все фото, QR и настройки. Только для администратора.
-                </p>
+              <OrganizerSection
+                title="Удалить мероприятие"
+                description="Все фото, QR и настройки будут удалены безвозвратно."
+                className="border-red-200 bg-red-50/50"
+              >
                 <button
                   type="button"
                   disabled={deleting}
                   onClick={async () => {
-                    if (
-                      !confirm(
-                        `Удалить «${title}» и все фото? Это нельзя отменить.`,
-                      )
-                    ) {
-                      return;
-                    }
+                    if (!confirm(`Удалить «${title}» и все файлы? Это нельзя отменить.`)) return;
                     setDeleting(true);
                     try {
                       await deleteAdminEvent(id);
@@ -472,16 +528,16 @@ export default function EventManage() {
                       setDeleting(false);
                     }
                   }}
-                  className="bg-red-800 text-paper px-4 py-2 text-xs uppercase flex items-center gap-2 disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-red-800 px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-paper disabled:opacity-50 sm:w-auto"
                 >
-                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                  Удалить мероприятие
+                  {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Удалить навсегда
                 </button>
-              </div>
+              </OrganizerSection>
             )}
-          </section>
+          </div>
         )}
       </main>
-    </div>
+    </OrganizerPageShell>
   );
 }
