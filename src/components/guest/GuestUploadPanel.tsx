@@ -1,50 +1,18 @@
 import { useCallback, useRef, useState } from 'react';
-import {
-  Camera,
-  Check,
-  CloudUpload,
-  Heart,
-  Loader2,
-  QrCode,
-  Send,
-  SwitchCamera,
-} from 'lucide-react';
+import { Check, CloudUpload, Heart, Loader2, QrCode } from 'lucide-react';
 import { isProbablyMediaFile } from '@/lib/guest-media';
 
 type UploadBanner = { kind: 'loading' | 'success' | 'error'; text: string } | null;
-
-type CameraBlockProps = {
-  videoRef: React.RefObject<HTMLVideoElement | null>;
-  bgUrl: string | null;
-  cameraReady: boolean;
-  cameraBlocked: boolean;
-  cameraOpening: boolean;
-  pendingPreviewUrl: string | null;
-  cameraFacing: 'environment' | 'user';
-  uploading: boolean;
-  uploadsOpen: boolean;
-  uploadBanner: UploadBanner;
-  shootError: string;
-  author: string;
-  onAuthorChange: (v: string) => void;
-  onOpenCamera: () => void;
-  onFlipCamera: () => void;
-  onTakePhoto: () => void;
-  onDiscardPending: () => void;
-  onConfirmUpload: () => void;
-  onVideoTapFocus: (e: React.PointerEvent<HTMLVideoElement>) => void;
-};
 
 type Props = {
   uploadsOpen: boolean;
   uploadsClosedReason?: string;
   uploading: boolean;
   uploadBanner: UploadBanner;
-  shootError: string;
+  uploadError: string;
   author: string;
   onAuthorChange: (v: string) => void;
   onPickFiles: (files: File[]) => void;
-  camera: CameraBlockProps;
 };
 
 function HowItWorks() {
@@ -73,144 +41,15 @@ function HowItWorks() {
   );
 }
 
-function CameraSection(props: CameraBlockProps) {
-  const {
-    videoRef,
-    bgUrl,
-    cameraReady,
-    cameraBlocked,
-    cameraOpening,
-    pendingPreviewUrl,
-    cameraFacing,
-    uploading,
-    uploadsOpen,
-    uploadBanner,
-    shootError,
-    author,
-    onAuthorChange,
-    onOpenCamera,
-    onFlipCamera,
-    onTakePhoto,
-    onDiscardPending,
-    onConfirmUpload,
-    onVideoTapFocus,
-  } = props;
-
-  return (
-    <div className="mt-6 space-y-3">
-      <p className="text-center text-[10px] uppercase tracking-[0.2em] text-muted">Или снимите с камеры</p>
-      <div className="relative aspect-[4/5] overflow-hidden border border-line bg-black">
-        <video
-          ref={videoRef}
-          className={`absolute inset-0 h-full w-full object-cover ${
-            cameraReady && !pendingPreviewUrl ? 'opacity-100' : 'opacity-0'
-          } ${cameraFacing === 'user' ? '[transform:scaleX(-1)]' : ''}`}
-          playsInline
-          muted
-          onPointerDown={cameraReady && !pendingPreviewUrl ? onVideoTapFocus : undefined}
-        />
-        {!cameraReady && !pendingPreviewUrl && (
-          <div className="absolute inset-0 flex flex-col">
-            {bgUrl ? (
-              <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${bgUrl})` }}
-              />
-            ) : (
-              <div className="absolute inset-0 bg-ink/80" />
-            )}
-            <div className="absolute inset-0 bg-black/50" />
-            <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-4 p-6">
-              {cameraOpening ? (
-                <Loader2 className="h-10 w-10 animate-spin text-paper" />
-              ) : (
-                <button
-                  type="button"
-                  onClick={onOpenCamera}
-                  className="inline-flex items-center gap-2 bg-ink px-6 py-3 text-xs uppercase text-paper"
-                >
-                  <Camera className="h-4 w-4" />
-                  {cameraBlocked ? 'Попробовать снова' : 'Открыть камеру'}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-        {pendingPreviewUrl && (
-          <div className="absolute inset-0 z-40 grid grid-rows-[1fr_auto] bg-black">
-            <img src={pendingPreviewUrl} alt="" className="min-h-0 h-full w-full object-contain" />
-            <div className="flex shrink-0 gap-3 border-t border-white/20 bg-black p-4">
-              <button
-                type="button"
-                onClick={onDiscardPending}
-                disabled={uploading}
-                className="flex-1 border border-paper/50 py-3 text-xs uppercase text-paper disabled:opacity-50"
-              >
-                Переснять
-              </button>
-              <button
-                type="button"
-                onClick={onConfirmUpload}
-                disabled={uploading || !uploadsOpen}
-                className="flex flex-1 items-center justify-center gap-2 bg-paper py-3 text-xs font-semibold uppercase text-ink disabled:opacity-60"
-              >
-                {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-                Отправить
-              </button>
-            </div>
-          </div>
-        )}
-        {cameraReady && !pendingPreviewUrl && (
-          <>
-            <button
-              type="button"
-              onClick={onFlipCamera}
-              className="absolute bottom-4 left-4 z-20 rounded-full bg-black/45 p-3 text-paper"
-            >
-              <SwitchCamera className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={onTakePhoto}
-              className="absolute bottom-4 left-1/2 z-20 h-16 w-16 -translate-x-1/2 rounded-full border-4 border-paper"
-              aria-label="Сфотографировать"
-            />
-          </>
-        )}
-      </div>
-      <input
-        value={author}
-        onChange={(e) => onAuthorChange(e.target.value)}
-        placeholder="Подпись (необязательно)"
-        className="w-full border border-line px-3 py-2 text-sm"
-        maxLength={80}
-      />
-      {uploadBanner && (
-        <p
-          className={`flex items-center justify-center gap-2 px-3 py-3 text-center text-sm ${
-            uploadBanner.kind === 'loading'
-              ? 'border border-line text-muted'
-              : uploadBanner.kind === 'success'
-                ? 'border border-emerald-200 bg-emerald-50 text-emerald-900'
-                : 'border border-red-200 bg-red-50 text-red-800'
-          }`}
-        >
-          {uploadBanner.kind === 'loading' && <Loader2 className="h-4 w-4 animate-spin" />}
-          {uploadBanner.kind === 'success' && <Check className="h-4 w-4" />}
-          {uploadBanner.text}
-        </p>
-      )}
-      {shootError && !uploadBanner && <p className="text-sm text-red-700">{shootError}</p>}
-    </div>
-  );
-}
-
 export default function GuestUploadPanel({
   uploadsOpen,
   uploadsClosedReason,
   uploading,
+  uploadBanner,
+  uploadError,
+  author,
+  onAuthorChange,
   onPickFiles,
-  camera,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -278,12 +117,36 @@ export default function GuestUploadPanel({
         />
       </div>
 
+      <input
+        value={author}
+        onChange={(e) => onAuthorChange(e.target.value)}
+        placeholder="Подпись (необязательно)"
+        className="mt-4 w-full border border-line px-3 py-2 text-sm"
+        maxLength={80}
+      />
+
+      {uploadBanner && (
+        <p
+          className={`mt-3 flex items-center justify-center gap-2 px-3 py-3 text-center text-sm ${
+            uploadBanner.kind === 'loading'
+              ? 'border border-line text-muted'
+              : uploadBanner.kind === 'success'
+                ? 'border border-emerald-200 bg-emerald-50 text-emerald-900'
+                : 'border border-red-200 bg-red-50 text-red-800'
+          }`}
+        >
+          {uploadBanner.kind === 'loading' && <Loader2 className="h-4 w-4 animate-spin" />}
+          {uploadBanner.kind === 'success' && <Check className="h-4 w-4" />}
+          {uploadBanner.text}
+        </p>
+      )}
+      {uploadError && !uploadBanner && <p className="mt-3 text-sm text-red-700">{uploadError}</p>}
+
       <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm text-muted">
         <Heart className="h-4 w-4 text-ink" strokeWidth={1.5} />
         Спасибо, что делитесь своими лучшими моментами!
       </p>
 
-      <CameraSection {...camera} />
       <HowItWorks />
     </div>
   );

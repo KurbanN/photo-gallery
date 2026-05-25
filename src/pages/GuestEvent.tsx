@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import GuestBottomNav from '@/components/guest/GuestBottomNav';
@@ -9,12 +9,6 @@ import GuestMediaLightbox from '@/components/guest/GuestMediaLightbox';
 import GuestPinScreen from '@/components/guest/GuestPinScreen';
 import GuestUploadPanel from '@/components/guest/GuestUploadPanel';
 import { ApiRequestError } from '@/lib/api';
-import {
-  applyMaxVideoConstraints,
-  captureStillFromVideo,
-  tryEnableContinuousFocus,
-  tryFocusAtNormalizedPoint,
-} from '@/lib/camera';
 import { usePageTitle } from '@/lib/brand';
 import { buildDemoStaticPhotos, isDemoStaticPhotoId } from '@/lib/demo-static-photos';
 import { formatEventDateLong, formatEventDateShort } from '@/lib/format-event-date';
@@ -49,28 +43,16 @@ export default function GuestEvent() {
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds(slug));
   const [feedError, setFeedError] = useState('');
-  const [shootError, setShootError] = useState('');
+  const [uploadError, setUploadError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [author, setAuthor] = useState('');
-  const [lightbox, setLightbox] = useState<PhotoEntry | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [uploadNotice, setUploadNotice] = useState('');
   const [uploadBanner, setUploadBanner] = useState<{
     kind: 'loading' | 'success' | 'error';
     text: string;
   } | null>(null);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const cameraGeneration = useRef(0);
-  const cameraOpeningRef = useRef(false);
-  const facingRef = useRef<'environment' | 'user'>('environment');
-  const pendingBlobRef = useRef<Blob | null>(null);
-  const [cameraFacing, setCameraFacing] = useState<'environment' | 'user'>('environment');
-  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
-  const [cameraReady, setCameraReady] = useState(false);
-  const [cameraBlocked, setCameraBlocked] = useState(false);
-  const [cameraOpening, setCameraOpening] = useState(false);
 
   const bgUrl = resolveBgUrl(eventPublic?.settings.loginBgUrl);
   const welcomeTitle = eventPublic?.settings.welcomeTitle ?? 'Мероприятие';
@@ -115,14 +97,6 @@ export default function GuestEvent() {
     };
   }, [slug, eventPublic, pin]);
 
-  const discardPending = useCallback(() => {
-    pendingBlobRef.current = null;
-    setPendingPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
-  }, []);
-
   const loadFeed = useCallback(async () => {
     if (pin === null || !slug) return;
     try {
@@ -150,93 +124,6 @@ export default function GuestEvent() {
     return () => window.clearInterval(t);
   }, [pin, loadFeed]);
 
-  const stopCamera = useCallback(() => {
-    cameraGeneration.current += 1;
-    cameraOpeningRef.current = false;
-    streamRef.current?.getTracks().forEach((tr) => tr.stop());
-    streamRef.current = null;
-    const el = videoRef.current;
-    if (el) el.srcObject = null;
-    setCameraReady(false);
-    setCameraBlocked(false);
-    setCameraOpening(false);
-    discardPending();
-  }, [discardPending]);
-
-  const openCamera = useCallback(async () => {
-    if (pin === null || streamRef.current || cameraOpeningRef.current) return;
-    const gen = cameraGeneration.current;
-    cameraOpeningRef.current = true;
-    setShootError('');
-    setCameraBlocked(false);
-    setCameraReady(false);
-    setCameraOpening(true);
-    try {
-      const facing = facingRef.current;
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: { facingMode: { ideal: facing }, width: { ideal: 3840 }, height: { ideal: 2160 } },
-        });
-      } catch {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: { facingMode: { ideal: facing } },
-        });
-      }
-      if (gen !== cameraGeneration.current) {
-        stream.getTracks().forEach((tr) => tr.stop());
-        return;
-      }
-      const vtrack = stream.getVideoTracks()[0];
-      if (vtrack) await applyMaxVideoConstraints(vtrack);
-      if (vtrack) tryEnableContinuousFocus(vtrack);
-      streamRef.current = stream;
-      const el = videoRef.current;
-      if (el) {
-        el.srcObject = stream;
-        await el.play().catch(() => {});
-        setCameraReady(true);
-      }
-    } catch {
-      setCameraBlocked(true);
-    } finally {
-      cameraOpeningRef.current = false;
-      if (gen === cameraGeneration.current) setCameraOpening(false);
-    }
-  }, [pin]);
-
-  const flipCamera = useCallback(() => {
-    if (pendingPreviewUrl) return;
-    const next = facingRef.current === 'environment' ? 'user' : 'environment';
-    facingRef.current = next;
-    setCameraFacing(next);
-    if (!streamRef.current && !cameraOpeningRef.current) return;
-    stopCamera();
-    queueMicrotask(() => void openCamera());
-  }, [pendingPreviewUrl, stopCamera, openCamera]);
-
-  const handleVideoTapFocus = useCallback(
-    (e: React.PointerEvent<HTMLVideoElement>) => {
-      if (pendingPreviewUrl || !streamRef.current) return;
-      const track = streamRef.current.getVideoTracks()[0];
-      if (!track?.readyState || track.readyState !== 'live') return;
-      const el = videoRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      let nx = (e.clientX - rect.left) / rect.width;
-      const ny = (e.clientY - rect.top) / rect.height;
-      if (cameraFacing === 'user') nx = 1 - nx;
-      void tryFocusAtNormalizedPoint(track, nx, ny);
-    },
-    [pendingPreviewUrl, cameraFacing],
-  );
-
-  useEffect(() => {
-    if (mainTab !== 'upload' || pin === null) stopCamera();
-  }, [mainTab, pin, stopCamera]);
-
   const enterWithPin = async (code: string) => {
     if (!eventPublic) return;
     setPinError('');
@@ -259,24 +146,39 @@ export default function GuestEvent() {
   };
 
   const goHome = () => {
-    stopCamera();
     clearStoredPin(slug);
     setPhotos([]);
-    setLightbox(null);
+    setLightboxIndex(null);
     navigate('/');
   };
 
+  const openLightbox = (item: PhotoEntry) => {
+    const idx = filteredPhotos.findIndex((p) => p.id === item.id);
+    setLightboxIndex(idx >= 0 ? idx : 0);
+  };
+
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    if (filteredPhotos.length === 0) {
+      setLightboxIndex(null);
+      return;
+    }
+    if (lightboxIndex >= filteredPhotos.length) {
+      setLightboxIndex(filteredPhotos.length - 1);
+    }
+  }, [filteredPhotos, lightboxIndex]);
+
   const submitMediaBlob = async (
     blob: Blob,
-    opts?: { afterCamera?: boolean; batch?: { index: number; total: number }; goToGallery?: boolean },
+    opts?: { batch?: { index: number; total: number }; goToGallery?: boolean },
   ) => {
     if (pin === null) return;
     if (!eventPublic?.uploadsOpen) {
-      setShootError(eventPublic?.uploadsClosedReason || 'Загрузка закрыта');
+      setUploadError(eventPublic?.uploadsClosedReason || 'Загрузка закрыта');
       return;
     }
     setUploading(true);
-    setShootError('');
+    setUploadError('');
     const isVideo = blob.type.startsWith('video/');
     const batchLabel =
       opts?.batch && opts.batch.total > 1
@@ -287,7 +189,6 @@ export default function GuestEvent() {
     setUploadBanner({ kind: 'loading', text: batchLabel });
     try {
       await uploadPhoto(slug, pin, blob, author.trim() || undefined);
-      if (opts?.afterCamera) discardPending();
       const text =
         opts?.batch && opts.batch.total > 1
           ? `Загружено ${opts.batch.index} из ${opts.batch.total}.`
@@ -309,33 +210,10 @@ export default function GuestEvent() {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Не удалось загрузить';
-      setShootError(msg);
+      setUploadError(msg);
       setUploadBanner({ kind: 'error', text: msg });
     } finally {
       setUploading(false);
-    }
-  };
-
-  const takePhoto = async () => {
-    if (!videoRef.current || pendingPreviewUrl) return;
-    setShootError('');
-    setUploadBanner(null);
-    try {
-      const blob = await captureStillFromVideo(videoRef.current, cameraFacing === 'user');
-      pendingBlobRef.current = blob;
-      setPendingPreviewUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return URL.createObjectURL(blob);
-      });
-      streamRef.current?.getVideoTracks().forEach((tr) => tr.stop());
-      streamRef.current = null;
-      const el = videoRef.current;
-      if (el) el.srcObject = null;
-      setCameraReady(false);
-      setCameraOpening(false);
-      cameraOpeningRef.current = false;
-    } catch (e) {
-      setShootError(e instanceof Error ? e.message : 'Не удалось снять');
     }
   };
 
@@ -450,7 +328,7 @@ export default function GuestEvent() {
             favoriteIds={favoriteIds}
             feedError={feedError}
             onRefresh={() => void loadFeed()}
-            onOpen={setLightbox}
+            onOpen={openLightbox}
             onToggleFavorite={handleToggleFavorite}
           />
         ) : (
@@ -459,49 +337,26 @@ export default function GuestEvent() {
             uploadsClosedReason={eventPublic.uploadsClosedReason}
             uploading={uploading}
             uploadBanner={uploadBanner}
-            shootError={shootError}
+            uploadError={uploadError}
             author={author}
             onAuthorChange={setAuthor}
             onPickFiles={(files) => void handlePickFiles(files)}
-            camera={{
-              videoRef,
-              bgUrl,
-              cameraReady,
-              cameraBlocked,
-              cameraOpening,
-              pendingPreviewUrl,
-              cameraFacing,
-              uploading,
-              uploadsOpen: eventPublic.uploadsOpen,
-              uploadBanner,
-              shootError,
-              author,
-              onAuthorChange: setAuthor,
-              onOpenCamera: () => void openCamera(),
-              onFlipCamera: flipCamera,
-              onTakePhoto: () => void takePhoto(),
-              onDiscardPending: () => {
-                discardPending();
-                void openCamera();
-              },
-              onConfirmUpload: () => {
-                const blob = pendingBlobRef.current;
-                if (blob) void submitMediaBlob(blob, { afterCamera: true });
-              },
-              onVideoTapFocus: handleVideoTapFocus,
-            }}
           />
         )}
       </main>
 
       {mainTab === 'gallery' && <GuestBottomNav active={feedFilter} onChange={setFeedFilter} />}
 
-      {lightbox && (
+      {lightboxIndex !== null && filteredPhotos.length > 0 && (
         <GuestMediaLightbox
-          item={lightbox}
+          items={filteredPhotos}
+          index={Math.min(lightboxIndex, filteredPhotos.length - 1)}
+          favoriteIds={favoriteIds}
           downloadBusy={downloadBusy}
-          onClose={() => setLightbox(null)}
-          onDownload={() => void handleDownload(lightbox)}
+          onClose={() => setLightboxIndex(null)}
+          onIndexChange={setLightboxIndex}
+          onToggleFavorite={handleToggleFavorite}
+          onDownload={(p) => void handleDownload(p)}
         />
       )}
     </div>
