@@ -1,7 +1,7 @@
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { getBucket, getSupabase } from './supabase.js';
-import type { EventRow, PhotoEntry, PhotoRow, PhotoStatus } from './types.js';
+import type { EventRow, MediaType, PhotoEntry, PhotoRow, PhotoStatus } from './types.js';
 import { countEventPhotos } from './events-db.js';
 
 export function publicUrlForPath(storagePath: string): string {
@@ -27,8 +27,27 @@ export function mimeFromFilename(filename: string): string {
     '.webp': 'image/webp',
     '.heic': 'image/heic',
     '.heif': 'image/heif',
+    '.mp4': 'video/mp4',
+    '.mov': 'video/quicktime',
+    '.webm': 'video/webm',
+    '.m4v': 'video/x-m4v',
+    '.mkv': 'video/x-matroska',
+    '.3gp': 'video/3gpp',
   };
   return map[ext] ?? 'application/octet-stream';
+}
+
+export function resolveMediaType(mimetype: string, filename: string): MediaType {
+  if (mimetype.startsWith('video/')) return 'video';
+  const ext = path.extname(filename).toLowerCase();
+  if (/\.(mp4|mov|webm|m4v|mkv|3gp)$/.test(ext)) return 'video';
+  return 'image';
+}
+
+function mediaTypeFromRow(row: PhotoRow): MediaType {
+  if (row.media_type === 'video') return 'video';
+  if (/\.(mp4|mov|webm|m4v|mkv|3gp)$/i.test(row.storage_path)) return 'video';
+  return 'image';
 }
 
 function rowToEntry(row: PhotoRow): PhotoEntry {
@@ -36,6 +55,7 @@ function rowToEntry(row: PhotoRow): PhotoEntry {
     id: row.id,
     url: publicUrlForPath(row.storage_path),
     createdAt: row.created_at,
+    mediaType: mediaTypeFromRow(row),
     ...(row.author ? { author: row.author } : {}),
     status: row.status,
   };
@@ -45,7 +65,7 @@ export async function listPhotosForGuest(event: EventRow): Promise<PhotoEntry[]>
   const supabase = getSupabase();
   let q = supabase
     .from('photos')
-    .select('id, storage_path, created_at, author, status')
+    .select('id, storage_path, created_at, author, status, media_type')
     .eq('event_id', event.id)
     .order('created_at', { ascending: false });
   q = q.neq('status', 'rejected');
@@ -58,7 +78,7 @@ export async function listPhotosForOrganizer(eventId: string): Promise<PhotoEntr
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('photos')
-    .select('id, storage_path, created_at, author, status')
+    .select('id, storage_path, created_at, author, status, media_type')
     .eq('event_id', eventId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -76,12 +96,18 @@ export async function uploadPhotoForEvent(
   if (count >= event.photo_limit) {
     throw new Error('PHOTO_LIMIT');
   }
-  const ext = path.extname(originalName) || '.jpg';
+  const mediaType = resolveMediaType(mimetype, originalName);
+  const ext =
+    path.extname(originalName) ||
+    (mediaType === 'video' ? '.mp4' : '.jpg');
   const id = randomUUID();
   const storagePath = `events/${event.id}/${id}${ext}`;
   const supabase = getSupabase();
   const bucket = getBucket();
-  const contentType = mimetype.startsWith('image/') ? mimetype : mimeFromFilename(ext);
+  const contentType =
+    mimetype.startsWith('image/') || mimetype.startsWith('video/')
+      ? mimetype
+      : mimeFromFilename(ext);
   const status: PhotoStatus = 'approved';
 
   const { error: upErr } = await supabase.storage.from(bucket).upload(storagePath, buffer, {
@@ -97,9 +123,10 @@ export async function uploadPhotoForEvent(
       event_id: event.id,
       storage_path: storagePath,
       status,
+      media_type: mediaType,
       ...(author ? { author } : {}),
     })
-    .select('id, storage_path, created_at, author, status')
+    .select('id, storage_path, created_at, author, status, media_type')
     .single();
   if (insErr) {
     await supabase.storage.from(bucket).remove([storagePath]).catch(() => {});

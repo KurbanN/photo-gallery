@@ -15,3 +15,9 @@
     @apply bg-paper text-ink font-sans antialiased min-h-dvh;
   }
 }
+
+@layer utilities {
+  .guest-pin-glass {
+    @apply border border-white/35 bg-black/25 backdrop-blur-sm;
+  }
+}

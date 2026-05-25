@@ -1,29 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  Camera,
-  Check,
-  FileImage,
-  Grid3x3,
-  Download,
-  Home,
-  Loader2,
-  LogOut,
-  RefreshCw,
-  Send,
-  SwitchCamera,
-  X,
-} from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import GuestBottomNav from '@/components/guest/GuestBottomNav';
+import GuestEventHeader from '@/components/guest/GuestEventHeader';
+import GuestGalleryPanel from '@/components/guest/GuestGalleryPanel';
+import GuestMainTabs, { type GuestMainTab } from '@/components/guest/GuestMainTabs';
+import GuestMediaLightbox from '@/components/guest/GuestMediaLightbox';
+import GuestPinScreen from '@/components/guest/GuestPinScreen';
+import GuestUploadPanel from '@/components/guest/GuestUploadPanel';
 import { ApiRequestError } from '@/lib/api';
 import {
   applyMaxVideoConstraints,
   captureStillFromVideo,
-  isProbablyImageFile,
   tryEnableContinuousFocus,
   tryFocusAtNormalizedPoint,
 } from '@/lib/camera';
 import { usePageTitle } from '@/lib/brand';
 import { buildDemoStaticPhotos, isDemoStaticPhotoId } from '@/lib/demo-static-photos';
+import { formatEventDateLong, formatEventDateShort } from '@/lib/format-event-date';
+import { getFavoriteIds, toggleFavorite } from '@/lib/guest-favorites';
+import { filterFeedItems, type FeedFilter } from '@/lib/guest-media';
 import {
   clearStoredPin,
   downloadPhotoFile,
@@ -37,12 +33,10 @@ import {
   type PhotoEntry,
 } from '@/lib/guest-api';
 
-type Tab = 'shoot' | 'feed';
-
 export default function GuestEvent() {
   const navigate = useNavigate();
   const { slug = '' } = useParams<{ slug: string }>();
-  const isDemo = slug === 'demo';
+
   const [eventPublic, setEventPublic] = useState<EventPublic | null>(null);
   const [loadErr, setLoadErr] = useState('');
   const [pin, setPin] = useState<string | null>(() => (slug ? getStoredPin(slug) : null));
@@ -50,8 +44,10 @@ export default function GuestEvent() {
   const [pinError, setPinError] = useState('');
   const [pinLoading, setPinLoading] = useState(false);
 
-  const [tab, setTab] = useState<Tab>('shoot');
+  const [mainTab, setMainTab] = useState<GuestMainTab>('gallery');
+  const [feedFilter, setFeedFilter] = useState<FeedFilter>('photo');
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => getFavoriteIds(slug));
   const [feedError, setFeedError] = useState('');
   const [shootError, setShootError] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -79,10 +75,13 @@ export default function GuestEvent() {
   const bgUrl = resolveBgUrl(eventPublic?.settings.loginBgUrl);
   const welcomeTitle = eventPublic?.settings.welcomeTitle ?? 'Мероприятие';
   usePageTitle(eventPublic ? welcomeTitle : undefined);
-  const welcomeSubtitle =
-    eventPublic?.settings.welcomeSubtitle ??
-    'Введите код с карточки на столе, затем снимайте и смотрите фото гостей.';
-  const headerSub = eventPublic?.settings.headerSubtitle ?? eventPublic?.title;
+  const dateLong = formatEventDateLong(eventPublic?.startsAt ?? eventPublic?.endsAt);
+  const dateShort = formatEventDateShort(eventPublic?.startsAt ?? eventPublic?.endsAt);
+
+  const filteredPhotos = useMemo(
+    () => filterFeedItems(photos, feedFilter, favoriteIds),
+    [photos, feedFilter, favoriteIds],
+  );
 
   useEffect(() => {
     if (!slug) return;
@@ -91,7 +90,6 @@ export default function GuestEvent() {
       .catch((e) => setLoadErr(e instanceof Error ? e.message : 'Не найдено'));
   }, [slug]);
 
-  /** Демо и мероприятия без PIN — сразу в ленту, без экрана входа */
   useEffect(() => {
     if (!slug || !eventPublic || eventPublic.pinRequired || pin !== null) return;
     let cancelled = false;
@@ -103,10 +101,10 @@ export default function GuestEvent() {
         if (cancelled) return;
         setStoredPin(slug, '');
         setPin('');
-        if (slug === 'demo') setTab('feed');
+        setMainTab('gallery');
       } catch (err) {
         if (cancelled) return;
-        setPinError(err instanceof Error ? err.message : 'Не удалось открыть демо');
+        setPinError(err instanceof Error ? err.message : 'Не удалось открыть');
       } finally {
         if (!cancelled) setPinLoading(false);
       }
@@ -236,24 +234,19 @@ export default function GuestEvent() {
   );
 
   useEffect(() => {
-    if (tab !== 'shoot' || pin === null) stopCamera();
-  }, [tab, pin, stopCamera]);
+    if (mainTab !== 'upload' || pin === null) stopCamera();
+  }, [mainTab, pin, stopCamera]);
 
-  const handlePinSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const enterWithPin = async (code: string) => {
     if (!eventPublic) return;
     setPinError('');
-    const p = eventPublic.pinRequired ? pinInput.trim() : '';
-    if (eventPublic.pinRequired && !p) {
-      setPinError('Введите код');
-      return;
-    }
     setPinLoading(true);
     try {
-      await fetchPhotos(slug, p);
-      setStoredPin(slug, p);
-      setPin(p);
+      await fetchPhotos(slug, code);
+      setStoredPin(slug, code);
+      setPin(code);
       setPinInput('');
+      setMainTab('gallery');
     } catch (err) {
       if (err instanceof ApiRequestError && err.status === 401) {
         setPinError('Код не подходит.');
@@ -265,16 +258,62 @@ export default function GuestEvent() {
     }
   };
 
-  const logout = () => {
-    discardPending();
+  const goHome = () => {
+    stopCamera();
     clearStoredPin(slug);
     setPhotos([]);
     setLightbox(null);
-    if (isDemo) {
-      navigate('/');
+    navigate('/');
+  };
+
+  const submitMediaBlob = async (
+    blob: Blob,
+    opts?: { afterCamera?: boolean; batch?: { index: number; total: number }; goToGallery?: boolean },
+  ) => {
+    if (pin === null) return;
+    if (!eventPublic?.uploadsOpen) {
+      setShootError(eventPublic?.uploadsClosedReason || 'Загрузка закрыта');
       return;
     }
-    setPin(null);
+    setUploading(true);
+    setShootError('');
+    const isVideo = blob.type.startsWith('video/');
+    const batchLabel =
+      opts?.batch && opts.batch.total > 1
+        ? `Загрузка ${opts.batch.index} из ${opts.batch.total}…`
+        : isVideo
+          ? 'Загрузка видео…'
+          : 'Загрузка фото…';
+    setUploadBanner({ kind: 'loading', text: batchLabel });
+    try {
+      await uploadPhoto(slug, pin, blob, author.trim() || undefined);
+      if (opts?.afterCamera) discardPending();
+      const text =
+        opts?.batch && opts.batch.total > 1
+          ? `Загружено ${opts.batch.index} из ${opts.batch.total}.`
+          : isVideo
+            ? 'Видео загружено и уже в ленте.'
+            : 'Фото загружено и уже в ленте.';
+      setUploadNotice(text);
+      setUploadBanner({ kind: 'success', text });
+      await loadFeed();
+      if (opts?.goToGallery !== false && (!opts?.batch || opts.batch.index === opts.batch.total)) {
+        setAuthor('');
+        window.setTimeout(() => {
+          setMainTab('gallery');
+          setFeedFilter(isVideo ? 'video' : 'photo');
+          setUploadBanner(null);
+        }, 1400);
+      } else if (opts?.batch && opts.batch.index < opts.batch.total) {
+        window.setTimeout(() => setUploadBanner(null), 400);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Не удалось загрузить';
+      setShootError(msg);
+      setUploadBanner({ kind: 'error', text: msg });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const takePhoto = async () => {
@@ -300,81 +339,13 @@ export default function GuestEvent() {
     }
   };
 
-  const submitPhotoBlob = async (
-    blob: Blob,
-    opts?: { afterCamera?: boolean; batch?: { index: number; total: number }; goToFeed?: boolean },
-  ) => {
-    if (pin === null) return;
-    if (!eventPublic?.uploadsOpen) {
-      setShootError(eventPublic?.uploadsClosedReason || 'Загрузка закрыта');
-      return;
+  const handlePickFiles = async (files: File[]) => {
+    for (let i = 0; i < files.length; i++) {
+      await submitMediaBlob(files[i], {
+        batch: { index: i + 1, total: files.length },
+        goToGallery: i === files.length - 1,
+      });
     }
-    setUploading(true);
-    setShootError('');
-    const batchLabel =
-      opts?.batch && opts.batch.total > 1
-        ? `Загрузка ${opts.batch.index} из ${opts.batch.total}…`
-        : 'Загрузка фото…';
-    setUploadBanner({ kind: 'loading', text: batchLabel });
-    try {
-      await uploadPhoto(slug, pin, blob, author.trim() || undefined);
-      if (opts?.afterCamera) discardPending();
-      const text =
-        opts?.batch && opts.batch.total > 1
-          ? `Загружено ${opts.batch.index} из ${opts.batch.total}.`
-          : 'Фото загружено и уже в общей ленте.';
-      setUploadNotice(text);
-      setUploadBanner({ kind: 'success', text });
-      await loadFeed();
-      if (opts?.goToFeed !== false && (!opts?.batch || opts.batch.index === opts.batch.total)) {
-        setAuthor('');
-        window.setTimeout(() => {
-          setTab('feed');
-          setUploadBanner(null);
-        }, 1600);
-      } else if (opts?.batch && opts.batch.index < opts.batch.total) {
-        window.setTimeout(() => setUploadBanner(null), 400);
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Не удалось загрузить';
-      setShootError(msg);
-      setUploadBanner({ kind: 'error', text: msg });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const confirmPendingUpload = async () => {
-    const blob = pendingBlobRef.current;
-    if (!blob) return;
-    await submitPhotoBlob(blob, { afterCamera: true });
-  };
-
-  const triggerImageUpload = () => {
-    if (pin === null || !eventPublic?.uploadsOpen) {
-      setShootError(eventPublic?.uploadsClosedReason || 'Загрузка закрыта');
-      return;
-    }
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.multiple = true;
-    input.onchange = async () => {
-      const list = input.files ? Array.from(input.files).filter(isProbablyImageFile) : [];
-      if (list.length === 0) {
-        setShootError('Выберите одно или несколько фото');
-        setUploadBanner({ kind: 'error', text: 'Нужен файл изображения' });
-        return;
-      }
-      setShootError('');
-      for (let i = 0; i < list.length; i++) {
-        await submitPhotoBlob(list[i], {
-          batch: { index: i + 1, total: list.length },
-          goToFeed: i === list.length - 1,
-        });
-      }
-    };
-    input.click();
   };
 
   const handleDownload = async (p: PhotoEntry) => {
@@ -382,7 +353,7 @@ export default function GuestEvent() {
     if (isDemoStaticPhotoId(p.id)) {
       const a = document.createElement('a');
       a.href = p.url;
-      a.download = `demo-${p.id.slice(12)}.jpg`;
+      a.download = `demo-${p.id.slice(12)}`;
       a.rel = 'noopener';
       a.click();
       return;
@@ -393,7 +364,7 @@ export default function GuestEvent() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${slug}-${p.id.slice(0, 8)}.jpg`;
+      a.download = `${slug}-${p.id.slice(0, 8)}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -403,9 +374,14 @@ export default function GuestEvent() {
     }
   };
 
+  const handleToggleFavorite = (id: string) => {
+    toggleFavorite(slug, id);
+    setFavoriteIds(getFavoriteIds(slug));
+  };
+
   if (loadErr) {
     return (
-      <div className="min-h-dvh flex items-center justify-center p-6 text-center text-muted">
+      <div className="flex min-h-dvh items-center justify-center p-6 text-center text-muted">
         {loadErr}
       </div>
     );
@@ -413,7 +389,7 @@ export default function GuestEvent() {
 
   if (!eventPublic) {
     return (
-      <div className="min-h-dvh flex items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted" />
       </div>
     );
@@ -422,7 +398,7 @@ export default function GuestEvent() {
   if (pin === null) {
     if (!eventPublic.pinRequired) {
       return (
-        <div className="min-h-dvh flex flex-col items-center justify-center gap-4 px-6 bg-paper">
+        <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-paper px-6">
           {pinLoading ? (
             <Loader2 className="h-8 w-8 animate-spin text-muted" />
           ) : (
@@ -430,23 +406,8 @@ export default function GuestEvent() {
               <p className="text-center text-sm text-red-700">{pinError || 'Не удалось открыть ленту'}</p>
               <button
                 type="button"
-                onClick={() => {
-                  setPinError('');
-                  void (async () => {
-                    setPinLoading(true);
-                    try {
-                      await fetchPhotos(slug, '');
-                      setStoredPin(slug, '');
-                      setPin('');
-                      if (slug === 'demo') setTab('feed');
-                    } catch (err) {
-                      setPinError(err instanceof Error ? err.message : 'Ошибка');
-                    } finally {
-                      setPinLoading(false);
-                    }
-                  })();
-                }}
-                className="bg-ink px-6 py-3 text-xs uppercase text-paper"
+                onClick={() => void enterWithPin('')}
+                className="rounded-full bg-ink px-8 py-3 text-xs uppercase text-paper"
               >
                 Повторить
               </button>
@@ -456,276 +417,92 @@ export default function GuestEvent() {
       );
     }
     return (
-      <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-16 bg-paper">
-        {bgUrl ? (
-          <div
-            className="pointer-events-none absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${bgUrl})` }}
-            aria-hidden
-          />
-        ) : null}
-        <div
-          className={`pointer-events-none absolute inset-0 ${
-            bgUrl
-              ? 'bg-gradient-to-b from-paper/88 via-paper/78 to-paper/90 backdrop-blur-[2px]'
-              : 'bg-gradient-to-b from-paper via-line/20 to-paper'
-          }`}
-        />
-        <div className="relative z-10 flex w-full max-w-xs flex-col items-center">
-          <p className="mb-2 text-center font-serif text-3xl text-ink md:text-4xl">{welcomeTitle}</p>
-          <p className="mb-8 max-w-sm text-center text-sm leading-relaxed text-muted">{welcomeSubtitle}</p>
-          <form onSubmit={handlePinSubmit} className="w-full space-y-4">
-            <label className="block text-[11px] uppercase tracking-[0.2em] text-muted">Код мероприятия</label>
-            <input
-              type="password"
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              value={pinInput}
-              onChange={(e) => setPinInput(e.target.value)}
-              placeholder="••••"
-              className="w-full border border-line/90 bg-white/95 px-4 py-3 text-center text-lg tracking-[0.3em] shadow-sm outline-none focus:border-ink"
-            />
-            {pinError && <p className="text-center text-sm text-red-700">{pinError}</p>}
-            <button
-              type="submit"
-              disabled={pinLoading}
-              className="flex w-full items-center justify-center gap-2 bg-ink py-3 text-xs font-semibold uppercase tracking-[0.25em] text-paper disabled:opacity-60"
-            >
-              {pinLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Войти
-            </button>
-          </form>
-        </div>
-      </div>
+      <GuestPinScreen
+        welcomeTitle={welcomeTitle}
+        eventDateShort={dateShort}
+        bgUrl={bgUrl}
+        pin={pinInput}
+        onPinChange={setPinInput}
+        error={pinError}
+        loading={pinLoading}
+        onSubmit={() => void enterWithPin(pinInput.trim())}
+      />
     );
   }
 
   return (
-    <div className="min-h-dvh flex flex-col bg-paper pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <header className="sticky top-0 z-20 border-b border-line bg-paper/95 backdrop-blur-sm px-4 py-3 flex items-center justify-between">
-        <div>
-          <p className="font-serif text-lg text-ink">{welcomeTitle}</p>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted">{headerSub}</p>
-        </div>
-        {isDemo ? (
-          <button
-            type="button"
-            onClick={logout}
-            className="flex items-center gap-1.5 p-2 text-muted hover:text-ink"
-            aria-label="На главную"
-          >
-            <Home className="w-5 h-5" />
-            <span className="text-[10px] uppercase tracking-[0.15em]">Главная</span>
-          </button>
-        ) : (
-          <button type="button" onClick={logout} className="p-2 text-muted hover:text-ink" aria-label="Выйти">
-            <LogOut className="w-5 h-5" />
-          </button>
-        )}
-      </header>
+    <div className="flex min-h-dvh flex-col bg-paper">
+      <GuestEventHeader title={welcomeTitle} dateLabel={dateLong} onHomeClick={goHome} />
 
       {uploadNotice && (
-        <p className="bg-ink/5 text-center text-xs text-muted px-4 py-2 border-b border-line">{uploadNotice}</p>
+        <p className="border-b border-line bg-ink/5 px-4 py-2 text-center text-xs text-muted">
+          {uploadNotice}
+        </p>
       )}
 
-      <nav className="flex border-b border-line">
-        <button
-          type="button"
-          onClick={() => setTab('shoot')}
-          className={`flex-1 py-3 flex items-center justify-center gap-2 text-xs uppercase tracking-[0.2em] ${
-            tab === 'shoot' ? 'bg-ink text-paper' : 'text-muted'
-          }`}
-        >
-          <Camera className="w-4 h-4" /> Снять
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('feed')}
-          className={`flex-1 py-3 flex items-center justify-center gap-2 text-xs uppercase tracking-[0.2em] ${
-            tab === 'feed' ? 'bg-ink text-paper' : 'text-muted'
-          }`}
-        >
-          <Grid3x3 className="w-4 h-4" /> Лента
-        </button>
-      </nav>
+      <GuestMainTabs active={mainTab} onChange={setMainTab} />
 
       <main className="flex-1">
-        {tab === 'shoot' && (
-          <div className="p-4 max-w-lg mx-auto space-y-4">
-            {!eventPublic.uploadsOpen && (
-              <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2">
-                {eventPublic.uploadsClosedReason || 'Приём фото закрыт. Ленту можно смотреть.'}
-              </p>
-            )}
-            <div className="relative aspect-[3/4] bg-black overflow-hidden border border-line">
-              <video
-                ref={videoRef}
-                className={`absolute inset-0 z-[1] h-full w-full object-cover ${
-                  cameraReady && !pendingPreviewUrl ? 'opacity-100' : 'opacity-0'
-                } ${cameraFacing === 'user' ? '[transform:scaleX(-1)]' : ''}`}
-                playsInline
-                muted
-                onPointerDown={cameraReady && !pendingPreviewUrl ? handleVideoTapFocus : undefined}
-              />
-              {!cameraReady && !pendingPreviewUrl && (
-                <div className="absolute inset-0 flex flex-col">
-                  {bgUrl ? (
-                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgUrl})` }} />
-                  ) : (
-                    <div className="absolute inset-0 bg-ink/80" />
-                  )}
-                  <div className="absolute inset-0 bg-black/50" />
-                  <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-5 p-6">
-                    {cameraOpening ? (
-                      <Loader2 className="h-10 w-10 animate-spin text-paper" />
-                    ) : cameraBlocked ? (
-                      <button type="button" onClick={openCamera} className="bg-ink px-6 py-3 text-xs text-paper uppercase">
-                        Попробовать снова
-                      </button>
-                    ) : (
-                      <button type="button" onClick={openCamera} className="bg-ink px-8 py-4 text-xs text-paper uppercase">
-                        Открыть камеру
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-              {pendingPreviewUrl && (
-                <div className="absolute inset-0 z-40 grid grid-rows-[1fr_auto] bg-black">
-                  <img src={pendingPreviewUrl} alt="" className="min-h-0 w-full h-full object-contain" />
-                  <div className="flex gap-3 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/20 bg-black shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        discardPending();
-                        void openCamera();
-                      }}
-                      disabled={uploading}
-                      className="flex-1 min-h-[3rem] border border-paper/50 py-3 text-xs text-paper uppercase disabled:opacity-50"
-                    >
-                      Переснять
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void confirmPendingUpload()}
-                      disabled={uploading}
-                      className="flex-1 min-h-[3rem] flex items-center justify-center gap-2 bg-paper py-3 text-xs font-semibold text-ink uppercase disabled:opacity-60"
-                    >
-                      {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-                      Отправить
-                    </button>
-                  </div>
-                </div>
-              )}
-              {cameraReady && !pendingPreviewUrl && (
-                <>
-                  <button type="button" onClick={flipCamera} className="absolute bottom-5 left-4 z-20 p-3 rounded-full bg-black/45 text-paper">
-                    <SwitchCamera className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void takePhoto()}
-                    className="absolute bottom-5 left-1/2 z-20 h-[4.5rem] w-[4.5rem] -translate-x-1/2 rounded-full border-4 border-paper"
-                    aria-label="Сфотографировать"
-                  />
-                  <button type="button" onClick={stopCamera} className="absolute bottom-5 right-4 z-20 text-[10px] text-paper uppercase">
-                    Выключить
-                  </button>
-                </>
-              )}
-            </div>
-            <input
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Подпись (необязательно)"
-              className="w-full border border-line px-3 py-2"
-              maxLength={80}
-            />
-            {uploadBanner && (
-              <p
-                className={`text-sm px-3 py-3 text-center border flex items-center justify-center gap-2 ${
-                  uploadBanner.kind === 'loading'
-                    ? 'bg-paper border-line text-muted'
-                    : uploadBanner.kind === 'success'
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                      : 'bg-red-50 border-red-200 text-red-800'
-                }`}
-                role="status"
-              >
-                {uploadBanner.kind === 'loading' && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
-                {uploadBanner.kind === 'success' && <Check className="h-4 w-4 shrink-0" />}
-                {uploadBanner.text}
-              </p>
-            )}
-            {shootError && !uploadBanner && <p className="text-sm text-red-700">{shootError}</p>}
-            <button
-              type="button"
-              disabled={uploading || !eventPublic.uploadsOpen}
-              onClick={() => triggerImageUpload()}
-              className="w-full border border-ink py-4 text-xs uppercase flex justify-center gap-2 disabled:opacity-60"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Загрузка…
-                </>
-              ) : (
-                <>
-                  <FileImage className="h-5 w-5" />
-                  Выбрать фото
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
-        {tab === 'feed' && (
-          <div className="p-4 max-w-3xl mx-auto">
-            <div className="flex justify-between mb-4">
-              <p className="text-sm text-muted">{photos.length} фото</p>
-              <button type="button" onClick={() => loadFeed()} className="text-xs uppercase border border-line px-3 py-2">
-                <RefreshCw className="inline w-4 h-4 mr-1" /> Обновить
-              </button>
-            </div>
-            {feedError && <p className="text-sm text-red-700 mb-3">{feedError}</p>}
-            <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {photos.map((p) => (
-                <li key={p.id}>
-                  <button type="button" onClick={() => setLightbox(p)} className="block w-full aspect-square border border-line overflow-hidden">
-                    <img src={p.url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                  </button>
-                  {p.author && <p className="text-[10px] text-muted truncate">{p.author}</p>}
-                </li>
-              ))}
-            </ul>
-          </div>
+        {mainTab === 'gallery' ? (
+          <GuestGalleryPanel
+            items={filteredPhotos}
+            filter={feedFilter}
+            favoriteIds={favoriteIds}
+            feedError={feedError}
+            onRefresh={() => void loadFeed()}
+            onOpen={setLightbox}
+            onToggleFavorite={handleToggleFavorite}
+          />
+        ) : (
+          <GuestUploadPanel
+            uploadsOpen={eventPublic.uploadsOpen}
+            uploadsClosedReason={eventPublic.uploadsClosedReason}
+            uploading={uploading}
+            uploadBanner={uploadBanner}
+            shootError={shootError}
+            author={author}
+            onAuthorChange={setAuthor}
+            onPickFiles={(files) => void handlePickFiles(files)}
+            camera={{
+              videoRef,
+              bgUrl,
+              cameraReady,
+              cameraBlocked,
+              cameraOpening,
+              pendingPreviewUrl,
+              cameraFacing,
+              uploading,
+              uploadsOpen: eventPublic.uploadsOpen,
+              uploadBanner,
+              shootError,
+              author,
+              onAuthorChange: setAuthor,
+              onOpenCamera: () => void openCamera(),
+              onFlipCamera: flipCamera,
+              onTakePhoto: () => void takePhoto(),
+              onDiscardPending: () => {
+                discardPending();
+                void openCamera();
+              },
+              onConfirmUpload: () => {
+                const blob = pendingBlobRef.current;
+                if (blob) void submitMediaBlob(blob, { afterCamera: true });
+              },
+              onVideoTapFocus: handleVideoTapFocus,
+            }}
+          />
         )}
       </main>
 
+      {mainTab === 'gallery' && <GuestBottomNav active={feedFilter} onChange={setFeedFilter} />}
+
       {lightbox && (
-        <div className="fixed inset-0 z-50 bg-black/92 flex flex-col p-4" role="dialog" onClick={() => setLightbox(null)}>
-          <button type="button" className="self-end text-paper" onClick={() => setLightbox(null)}>
-            <X className="w-7 h-7" />
-          </button>
-          <div className="flex-1 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <img src={lightbox.url} alt="" className="max-h-[75dvh] max-w-full object-contain" />
-          </div>
-          <div className="text-center text-paper/80 mt-4">
-            {lightbox.author && <p>{lightbox.author}</p>}
-            <button
-              type="button"
-              disabled={downloadBusy}
-              onClick={(e) => {
-                e.stopPropagation();
-                void handleDownload(lightbox);
-              }}
-              className="mt-4 inline-flex gap-2 text-xs uppercase"
-            >
-              {downloadBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Скачать
-            </button>
-          </div>
-        </div>
+        <GuestMediaLightbox
+          item={lightbox}
+          downloadBusy={downloadBusy}
+          onClose={() => setLightbox(null)}
+          onDownload={() => void handleDownload(lightbox)}
+        />
       )}
     </div>
   );

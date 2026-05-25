@@ -18,18 +18,18 @@ import type { EventSettings } from '../types.js';
 
 const MAX_FILE_MB = Number(process.env.MAX_FILE_MB) || 40;
 
-function looksLikeImageUpload(file: Express.Multer.File): boolean {
-  if (file.mimetype.startsWith('image/')) return true;
+function looksLikeMediaUpload(file: Express.Multer.File): boolean {
+  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) return true;
   const name = (file.originalname || '').toLowerCase();
-  return /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/.test(name);
+  return /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?|mp4|mov|webm|m4v|mkv|3gp)$/.test(name);
 }
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_MB * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    if (looksLikeImageUpload(file)) cb(null, true);
-    else cb(new Error('Только изображения'));
+    if (looksLikeMediaUpload(file)) cb(null, true);
+    else cb(new Error('Только фото и видео'));
   },
 });
 
@@ -59,6 +59,8 @@ export function guestRouter(): Router {
         pinRequired: event.pin_enabled,
         uploadsOpen: uploadCheck.ok,
         uploadsClosedReason: uploadCheck.reason,
+        startsAt: event.starts_at,
+        endsAt: event.ends_at,
         settings: {
           welcomeTitle: settings.welcomeTitle ?? event.title,
           welcomeSubtitle: settings.welcomeSubtitle,
@@ -172,7 +174,7 @@ export function guestRouter(): Router {
         res.status(201).json({ photo });
       } catch (e) {
         if (e instanceof Error && e.message === 'PHOTO_LIMIT') {
-          res.status(403).json({ error: 'Достигнут лимит фото для тарифа' });
+          res.status(403).json({ error: 'Достигнут лимит файлов для тарифа' });
           return;
         }
         console.error(e);

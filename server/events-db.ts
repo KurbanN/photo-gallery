@@ -245,7 +245,7 @@ export async function ensureDemoEvent(): Promise<EventRow> {
   const settings: EventSettings = {
     welcomeTitle: 'Демо-лента',
     welcomeSubtitle:
-      'Без кода — попробуйте съёмку и общую ленту. Фото сохраняются, как на реальном мероприятии.',
+      'Без кода — попробуйте галерею и загрузку. Фото и видео сохраняются, как на реальном мероприятии.',
     headerSubtitle: 'Демонстрация Allmemories',
   };
   const { data: existing } = await supabase.from('events').select('*').eq('slug', slug).maybeSingle();

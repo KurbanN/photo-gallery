@@ -26,5 +26,6 @@ export function buildDemoStaticPhotos(): PhotoEntry[] {
     createdAt: new Date(now - (DEMO_FILES.length - i) * 45 * 60_000).toISOString(),
     author: DEMO_AUTHORS[i % DEMO_AUTHORS.length],
     status: 'approved',
+    mediaType: 'image',
   }));
 }

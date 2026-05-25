@@ -28,6 +28,8 @@ export type EventRow = {
   updated_at: string;
 };
 
+export type MediaType = 'image' | 'video';
+
 export type PhotoRow = {
   id: string;
   event_id: string | null;
@@ -35,6 +37,7 @@ export type PhotoRow = {
   created_at: string;
   author: string | null;
   status: PhotoStatus;
+  media_type?: MediaType;
 };
 
 export type PhotoEntry = {
@@ -43,6 +46,7 @@ export type PhotoEntry = {
   createdAt: string;
   author?: string;
   status?: PhotoStatus;
+  mediaType: MediaType;
 };
 
 export const PLAN_LIMITS: Record<EventPlan, { photoLimit: number }> = {

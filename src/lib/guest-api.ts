@@ -6,6 +6,8 @@ function assertApi() {
   if (!isApiConfigured()) throw new Error(apiNotConfiguredMessage());
 }
 
+export type MediaType = 'image' | 'video';
+
 export type EventPublic = {
   slug: string;
   title: string;
@@ -13,6 +15,8 @@ export type EventPublic = {
   pinRequired: boolean;
   uploadsOpen: boolean;
   uploadsClosedReason?: string;
+  startsAt?: string | null;
+  endsAt?: string | null;
   settings: {
     welcomeTitle: string;
     welcomeSubtitle?: string;
@@ -27,6 +31,7 @@ export type PhotoEntry = {
   createdAt: string;
   author?: string;
   status?: string;
+  mediaType?: MediaType;
 };
 
 function pinKey(slug: string) {
@@ -82,7 +87,12 @@ export async function fetchPhotos(slug: string, pin: string): Promise<PhotoEntry
 function uploadFilename(blob: Blob): string {
   if (blob instanceof File && blob.name?.trim()) {
     const n = blob.name.trim();
-    if (/\.(jpe?g|png|webp|heic|heif|gif)$/i.test(n)) return n;
+    if (/\.(jpe?g|png|webp|heic|heif|gif|mp4|mov|webm|m4v|3gp|mkv)$/i.test(n)) return n;
+  }
+  if (blob.type.startsWith('video/')) {
+    if (blob.type === 'video/quicktime') return 'video.mov';
+    if (blob.type === 'video/webm') return 'video.webm';
+    return 'video.mp4';
   }
   if (blob.type === 'image/png') return 'photo.png';
   if (blob.type === 'image/webp') return 'photo.webp';
