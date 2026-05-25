@@ -15,12 +15,16 @@ async function authHeaders(): Promise<HeadersInit> {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
-export type OrganizerRole = 'admin' | 'organizer' | 'pending';
+export type OrganizerRole = 'admin' | 'organizer' | 'client' | 'pending';
+export type GrantableRole = 'organizer' | 'client';
 
 export type OrganizerProfile = {
   id: string;
   email: string | null;
   role: OrganizerRole;
+  event_create_limit?: number | null;
+  events_created?: number;
+  can_create_event?: boolean;
 };
 
 export async function fetchMe(): Promise<OrganizerProfile> {
@@ -182,12 +186,15 @@ export type AdminOrganizerRow = {
   id: string;
   email: string | null;
   role: OrganizerRole;
+  event_create_limit: number | null;
+  events_created: number;
   created_at: string;
 };
 
 export type AdminInviteRow = {
   id: string;
   email: string;
+  role: GrantableRole;
   created_at: string;
 };
 
@@ -201,15 +208,25 @@ export async function listAdminOrganizers(): Promise<{
   return body;
 }
 
-export async function grantOrganizer(email: string): Promise<string> {
+export async function grantAccess(email: string, role: GrantableRole): Promise<string> {
   const res = await fetch(apiUrl('/api/v1/admin/organizers/grant'), {
     method: 'POST',
     headers: await authHeaders(),
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, role }),
   });
   const body = await res.json();
   if (!res.ok) throw new Error(body.error || 'Ошибка');
   return (body as { message?: string }).message || 'Готово';
+}
+
+export async function addClientEventSlot(organizerId: string): Promise<string> {
+  const res = await fetch(apiUrl(`/api/v1/admin/organizers/${organizerId}/add-event-slot`), {
+    method: 'POST',
+    headers: await authHeaders(),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || 'Ошибка');
+  return (body as { message?: string }).message || 'Лимит увеличен';
 }
 
 export async function revokeOrganizer(email: string): Promise<void> {

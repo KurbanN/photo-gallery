@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import QRCode from 'qrcode';
+import { assertCanCreateEvent, withEventQuota } from '../client-quota.js';
 import { getOrganizer, requireOrganizer, requireEventManager } from '../auth.js';
 import type { AuthUser } from '../auth.js';
 import {
@@ -43,7 +44,13 @@ export function organizerRouter(): Router {
   const router = Router();
 
   router.get('/me', requireOrganizer, async (req, res) => {
-    res.json({ profile: getOrganizer(req) });
+    try {
+      const profile = await withEventQuota(getOrganizer(req));
+      res.json({ profile });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Ошибка профиля' });
+    }
   });
 
   router.use(requireEventManager);
@@ -62,6 +69,18 @@ export function organizerRouter(): Router {
   router.post('/events', async (req, res) => {
     try {
       const org = getOrganizer(req);
+      try {
+        await assertCanCreateEvent(org);
+      } catch (e) {
+        if (e instanceof Error && e.message === 'EVENT_CREATE_LIMIT') {
+          res.status(403).json({
+            error: 'Достигнут лимит мероприятий',
+            hint: 'Попросите администратора выдать разрешение на ещё одно мероприятие.',
+          });
+          return;
+        }
+        throw e;
+      }
       const body = req.body as {
         title?: string;
         slug?: string;
@@ -92,6 +111,13 @@ export function organizerRouter(): Router {
       });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '';
+      if (msg === 'EVENT_CREATE_LIMIT') {
+        res.status(403).json({
+          error: 'Достигнут лимит мероприятий',
+          hint: 'Попросите администратора выдать разрешение на ещё одно мероприятие.',
+        });
+        return;
+      }
       if (/duplicate|unique/i.test(msg)) {
         res.status(409).json({ error: 'Такой адрес (slug) уже занят' });
         return;

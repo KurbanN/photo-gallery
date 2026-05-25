@@ -2,10 +2,13 @@ import { Router } from 'express';
 import { getOrganizer, requireAdmin } from '../auth.js';
 import { deleteEvent } from '../events-db.js';
 import {
-  grantOrganizerByEmail,
+  addClientEventSlot,
+  grantAccessByEmail,
   listOrganizersAndInvites,
   revokeOrganizerAccess,
+  type GrantableRole,
 } from '../roles-db.js';
+import { withEventQuota } from '../client-quota.js';
 
 export function adminRouter(): Router {
   const router = Router();
@@ -24,18 +27,22 @@ export function adminRouter(): Router {
   router.post('/organizers/grant', async (req, res) => {
     try {
       const admin = getOrganizer(req);
-      const email = (req.body as { email?: string }).email;
+      const body = req.body as { email?: string; role?: GrantableRole };
+      const email = body.email;
       if (!email?.trim()) {
         res.status(400).json({ error: 'Укажите email' });
         return;
       }
-      const result = await grantOrganizerByEmail(admin.id, email);
+      const grantRole: GrantableRole = body.role === 'client' ? 'client' : 'organizer';
+      const result = await grantAccessByEmail(admin.id, email, grantRole);
+      const roleLabel = grantRole === 'client' ? 'клиента (1 мероприятие)' : 'организатора';
       res.status(201).json({
         ...result,
+        role: grantRole,
         message:
           result.status === 'promoted'
-            ? 'Пользователь уже был в системе — роль организатора выдана.'
-            : 'Приглашение сохранено. После входа по этому email доступ откроется автоматически.',
+            ? `Пользователь уже был в системе — роль ${roleLabel} выдана.`
+            : `Приглашение сохранено. После входа по этому email откроется роль ${roleLabel}.`,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
@@ -45,6 +52,30 @@ export function adminRouter(): Router {
       }
       console.error(e);
       res.status(500).json({ error: 'Не удалось выдать доступ' });
+    }
+  });
+
+  router.post('/organizers/:id/add-event-slot', async (req, res) => {
+    try {
+      const updated = await addClientEventSlot(req.params.id);
+      const profile = await withEventQuota(updated);
+      res.json({
+        ok: true,
+        profile,
+        message: `Лимит мероприятий: ${profile.event_create_limit ?? 0} (создано: ${profile.events_created})`,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg === 'NOT_FOUND') {
+        res.status(404).json({ error: 'Пользователь не найден' });
+        return;
+      }
+      if (msg === 'NOT_CLIENT') {
+        res.status(400).json({ error: 'Доп. слоты только для роли client' });
+        return;
+      }
+      console.error(e);
+      res.status(500).json({ error: 'Не удалось увеличить лимит' });
     }
   });
 

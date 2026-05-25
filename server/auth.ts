@@ -38,8 +38,8 @@ export async function requireEventManager(
     const org = getOrganizer(req);
     if (!canManageEvents(org.role)) {
       res.status(403).json({
-        error: 'Нет доступа организатора',
-        hint: 'Попросите администратора выдать роль организатора на ваш email.',
+        error: 'Нет доступа к кабинету',
+        hint: 'Попросите администратора выдать роль организатора или клиента на ваш email.',
         role: org.role,
       });
       return;

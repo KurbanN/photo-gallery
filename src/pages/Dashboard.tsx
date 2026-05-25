@@ -13,7 +13,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const canCreate = profile?.role === 'admin' || profile?.role === 'organizer';
+  const canManage =
+    profile?.role === 'admin' || profile?.role === 'organizer' || profile?.role === 'client';
+  const canCreate =
+    profile?.can_create_event ??
+    (profile?.role === 'admin' || profile?.role === 'organizer');
 
   useEffect(() => {
     const supabase = createClient();
@@ -29,7 +33,7 @@ export default function Dashboard() {
     try {
       const me = await fetchMe();
       setProfile(me);
-      if (me.role === 'admin' || me.role === 'organizer') {
+      if (me.role === 'admin' || me.role === 'organizer' || me.role === 'client') {
         setEvents(await listEvents());
       } else {
         setEvents([]);
@@ -64,7 +68,7 @@ export default function Dashboard() {
               to="/dashboard/admin"
               className="text-xs uppercase tracking-[0.15em] text-ink flex items-center gap-1"
             >
-              <Shield className="w-4 h-4" /> Организаторы
+              <Shield className="w-4 h-4" /> Доступы
             </Link>
           )}
           <button type="button" onClick={logout} className="text-xs uppercase text-muted">
@@ -84,6 +88,20 @@ export default function Dashboard() {
           </div>
         )}
 
+        {canManage && profile?.role === 'client' && (
+          <p className="mb-4 text-sm text-muted border border-line px-4 py-3">
+            Мероприятий:{' '}
+            <span className="text-ink font-medium">
+              {profile.events_created ?? 0} из {profile.event_create_limit ?? 0}
+            </span>
+            {!canCreate && (
+              <span className="block mt-1 text-amber-900">
+                Лимит исчерпан. Попросите администратора выдать разрешение на ещё одно.
+              </span>
+            )}
+          </p>
+        )}
+
         {canCreate && (
           <Link
             to="/dashboard/new"
@@ -96,7 +114,7 @@ export default function Dashboard() {
         {loading && <Loader2 className="animate-spin text-muted" />}
         {error && <p className="text-red-700 text-sm">{error}</p>}
 
-        {canCreate && (
+        {canManage && (
           <>
             <h2 className="text-xs uppercase tracking-[0.2em] text-muted mb-4">
               {profile?.role === 'admin' ? 'Все мероприятия' : 'Мои мероприятия'}
@@ -124,7 +142,9 @@ export default function Dashboard() {
               ))}
             </ul>
             {!loading && events.length === 0 && (
-              <p className="text-muted text-sm">Пока нет мероприятий. Создайте первое.</p>
+              <p className="text-muted text-sm">
+                {canCreate ? 'Пока нет мероприятий. Создайте первое.' : 'Нет мероприятий.'}
+              </p>
             )}
           </>
         )}

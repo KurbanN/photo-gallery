@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import CreateEventSteps, { type CreateEventStep } from '@/components/CreateEventSteps';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
 import { usePageTitle } from '@/lib/brand';
 import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings } from '@/lib/event-branding';
-import { createEvent, uploadLoginBg } from '@/lib/organizer-api';
+import { createClient } from '@/lib/supabase/client';
+import { createEvent, fetchMe, uploadLoginBg } from '@/lib/organizer-api';
 
 export default function EventCreate() {
   usePageTitle('Новое мероприятие');
+  const navigate = useNavigate();
+  const [accessChecked, setAccessChecked] = useState(false);
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [plan, setPlan] = useState<'lite' | 'party' | 'premium'>('party');
@@ -22,6 +25,25 @@ export default function EventCreate() {
   const [error, setError] = useState('');
   const [step, setStep] = useState<CreateEventStep>('basic');
   const [created, setCreated] = useState<{ pin: string; guestUrl: string; id: string } | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        navigate('/dashboard/login', { replace: true });
+        return;
+      }
+      void fetchMe()
+        .then((me) => {
+          if (me.can_create_event === false) {
+            navigate('/dashboard', { replace: true });
+            return;
+          }
+          setAccessChecked(true);
+        })
+        .catch(() => navigate('/dashboard', { replace: true }));
+    });
+  }, [navigate]);
 
   useEffect(() => {
     if (!welcomeManual.current) setWelcomeTitle(title);
@@ -71,6 +93,14 @@ export default function EventCreate() {
       setLoading(false);
     }
   };
+
+  if (!accessChecked) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted" />
+      </div>
+    );
+  }
 
   if (created) {
     return (
