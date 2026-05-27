@@ -7,7 +7,7 @@ export type EventSettings = {
   welcomeSubtitle?: string;
   loginBgUrl?: string;
   headerSubtitle?: string;
-  qrCardVariant?: 'classic' | 'minimal' | 'botanical' | 'noir';
+  qrCardVariant?: 'classic' | 'minimal' | 'botanical' | 'noir' | 'kazakh';
 };
 
 export type EventRow = {

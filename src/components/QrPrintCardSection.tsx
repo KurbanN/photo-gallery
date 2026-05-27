@@ -75,7 +75,7 @@ export default function QrPrintCardSection({
 
       <div className="space-y-2">
         <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">Дизайн карточки</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {QR_CARD_VARIANTS.map((item) => {
             const selected = item.id === activeVariant;
             return (
