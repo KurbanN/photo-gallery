@@ -9,7 +9,7 @@ export default function LandingHeroMockup() {
         src={LANDING_MOCKUPS.hero}
         alt="Живая лента фото с мероприятия"
         aspect="phone"
-        className="max-w-[min(100%,300px)] lg:max-w-[340px]"
+        className="w-full max-w-[min(100%,280px)] sm:max-w-[300px] lg:max-w-[340px] [&>div]:max-w-none"
       />
     );
   }

@@ -33,12 +33,16 @@ export default function LandingShowcase() {
       title="Как выглядит у гостей и организатора"
       className="border-y border-line bg-paper"
     >
-      <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-4 lg:gap-6">
         {LANDING_SHOWCASE.map((item) => (
-          <article key={item.key} className="flex flex-col">
-            <ShowcaseVisual mockupKey={item.mockupKey} title={item.title} />
-            <h3 className="mt-6 font-serif text-lg text-ink mb-2">{item.title}</h3>
-            <p className="text-sm text-muted leading-relaxed flex-1">{item.description}</p>
+          <article key={item.key} className="flex min-w-0 flex-col">
+            <div className="[&_figure>div]:max-w-none">
+              <ShowcaseVisual mockupKey={item.mockupKey} title={item.title} />
+            </div>
+            <h3 className="mt-3 font-serif text-base text-ink mb-1 sm:mt-5 sm:text-lg sm:mb-2">
+              {item.title}
+            </h3>
+            <p className="text-xs text-muted leading-relaxed flex-1 sm:text-sm">{item.description}</p>
           </article>
         ))}
       </div>

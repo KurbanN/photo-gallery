@@ -21,7 +21,7 @@ export default function LandingSection({
 
   return (
     <section id={id} className={`scroll-mt-20 py-16 md:py-24 ${className}`} aria-labelledby={titleId}>
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto min-w-0 max-w-6xl px-6">
         {(title || subtitle) && (
           <header className={`mb-10 md:mb-14 mx-auto max-w-2xl text-center ${headerClassName}`}>
             {title && (

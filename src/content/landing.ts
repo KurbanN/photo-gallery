@@ -1,13 +1,29 @@
+import { publicAssetUrl } from '@/lib/public-asset-url';
+
 /** Тексты и пути к мокапам лендинга. Пустой src — показывается CSS-заглушка. */
-const MOCKUP_BASE = '/landing/mockups';
+function landingMockup(file: string): string {
+  return publicAssetUrl(`/landing/mockups/${file}`);
+}
 
 export const LANDING_MOCKUPS = {
-  hero: `${MOCKUP_BASE}/mockup-gallery.png`,
-  login: `${MOCKUP_BASE}/mockup-login.png`,
-  gallery: `${MOCKUP_BASE}/mockup-gallery.png`,
-  upload: `${MOCKUP_BASE}/mockup-upload.png`,
-  dashboard: `${MOCKUP_BASE}/mockup-dashboard.png`,
+  hero: landingMockup('mockup-gallery.png'),
+  login: landingMockup('mockup-login.png'),
+  gallery: landingMockup('mockup-gallery.png'),
+  upload: landingMockup('mockup-upload.png'),
+  dashboard: landingMockup('mockup-dashboard.png'),
 } as const;
+
+function landingExamplePhoto(file: string): string {
+  return publicAssetUrl(`/landing/example/${file}`);
+}
+
+/** Скриншоты для горизонтального скролла в hero. Файлы: public/landing/example/ */
+export const LANDING_EXAMPLE_PHOTOS = [
+  landingExamplePhoto('48d29dc7-993a-4554-8766-d922cb5b8d51.png'),
+  landingExamplePhoto('7ad06ea3-ad7c-4e8f-8d8f-8ec3e2378c6f.png'),
+  landingExamplePhoto('example-3.png'),
+  landingExamplePhoto('example-4.png'),
+] as const;
 
 export const LANDING_CONTACT = {
   whatsappUrl: 'https://wa.clck.bar/77471110010',

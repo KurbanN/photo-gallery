@@ -14,7 +14,7 @@ export default function Landing() {
   usePageTitle(LANDING_HERO.title);
 
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className="flex min-h-dvh flex-col overflow-x-hidden">
       <LandingHeader />
       <main>
         <LandingHero />
