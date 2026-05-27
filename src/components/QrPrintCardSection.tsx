@@ -76,65 +76,32 @@ export default function QrPrintCardSection({
       <div className="space-y-2">
         <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">Дизайн карточки</p>
 
-        {/* Mobile: компактный горизонтальный скролл */}
-        <div className="sm:hidden -mx-2 px-2">
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {QR_CARD_VARIANTS.map((item) => {
-              const selected = item.id === activeVariant;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  disabled={variantSaving || busy !== null}
-                  onClick={() => void onVariantChange(item.id)}
-                  className={`min-w-[148px] rounded-sm border px-3 py-2 text-left transition-colors disabled:opacity-50 ${
-                    selected ? 'border-ink bg-ink/5 ring-1 ring-ink/20' : 'border-line hover:border-ink/30'
-                  }`}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {QR_CARD_VARIANTS.map((item) => {
+            const selected = item.id === activeVariant;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                disabled={variantSaving || busy !== null}
+                onClick={() => void onVariantChange(item.id)}
+                className={`rounded-sm border px-3 py-3 text-left transition-colors disabled:opacity-50 ${
+                  selected ? 'border-ink bg-ink/5 ring-1 ring-ink/20' : 'border-line hover:border-ink/30'
+                }`}
+              >
+                <div
+                  className="mb-2 flex h-10 items-end justify-between rounded-sm border border-black/5 px-2 pb-1.5"
+                  style={{ backgroundColor: item.previewBg }}
+                  aria-hidden
                 >
-                  <div
-                    className="mb-2 flex h-8 items-end justify-between rounded-sm border border-black/5 px-2 pb-1.5"
-                    style={{ backgroundColor: item.previewBg }}
-                    aria-hidden
-                  >
-                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.previewAccent }} />
-                    <span className="h-3.5 w-3.5 border border-black/15 bg-white" />
-                  </div>
-                  <span className="block truncate text-[11px] font-semibold text-ink">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Desktop: сетка */}
-        <div className="hidden sm:block">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-            {QR_CARD_VARIANTS.map((item) => {
-              const selected = item.id === activeVariant;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  disabled={variantSaving || busy !== null}
-                  onClick={() => void onVariantChange(item.id)}
-                  className={`rounded-sm border px-3 py-3 text-left transition-colors disabled:opacity-50 ${
-                    selected ? 'border-ink bg-ink/5 ring-1 ring-ink/20' : 'border-line hover:border-ink/30'
-                  }`}
-                >
-                  <div
-                    className="mb-2 flex h-10 items-end justify-between rounded-sm border border-black/5 px-2 pb-1.5"
-                    style={{ backgroundColor: item.previewBg }}
-                    aria-hidden
-                  >
-                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.previewAccent }} />
-                    <span className="h-4 w-4 border border-black/15 bg-white" />
-                  </div>
-                  <span className="block text-[11px] font-semibold text-ink">{item.label}</span>
-                  <span className="mt-0.5 block text-[10px] leading-snug text-muted">{item.description}</span>
-                </button>
-              );
-            })}
-          </div>
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.previewAccent }} />
+                  <span className="h-4 w-4 border border-black/15 bg-white" />
+                </div>
+                <span className="block text-[11px] font-semibold text-ink">{item.label}</span>
+                <span className="mt-0.5 block text-[10px] leading-snug text-muted">{item.description}</span>
+              </button>
+            );
+          })}
         </div>
 
         {variantSaving && (
