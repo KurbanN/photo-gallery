@@ -1,4 +1,4 @@
-export type QrCardVariant = 'classic' | 'minimal' | 'botanical' | 'noir' | 'kazakh';
+export type QrCardVariant = 'classic' | 'minimal' | 'botanical' | 'noir';
 
 export type QrCardVariantMeta = {
   id: QrCardVariant;
@@ -37,13 +37,6 @@ export const QR_CARD_VARIANTS: QrCardVariantMeta[] = [
     previewBg: '#141414',
     previewAccent: '#c4a962',
   },
-  {
-    id: 'kazakh',
-    label: 'Рамка',
-    description: 'Бордо и золото на белом',
-    previewBg: '#ffffff',
-    previewAccent: '#8b2e3c',
-  },
 ];
 
 export function isQrCardVariant(value: unknown): value is QrCardVariant {
@@ -51,8 +44,7 @@ export function isQrCardVariant(value: unknown): value is QrCardVariant {
     value === 'classic' ||
     value === 'minimal' ||
     value === 'botanical' ||
-    value === 'noir' ||
-    value === 'kazakh'
+    value === 'noir'
   );
 }
 

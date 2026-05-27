@@ -2,7 +2,6 @@ import { forwardRef } from 'react';
 import { normalizeQrCardVariant, type QrCardVariant } from '@/lib/qr-card-variants';
 import QrPrintCardBotanical from './qr-cards/QrPrintCardBotanical';
 import QrPrintCardClassic from './qr-cards/QrPrintCardClassic';
-import QrPrintCardKazakh from './qr-cards/QrPrintCardKazakh';
 import QrPrintCardMinimal from './qr-cards/QrPrintCardMinimal';
 import QrPrintCardNoir from './qr-cards/QrPrintCardNoir';
 import type { QrPrintCardProps } from './qr-cards/types';
@@ -24,8 +23,6 @@ const QrPrintCard = forwardRef<HTMLDivElement, QrPrintCardProps>(function QrPrin
       return <QrPrintCardBotanical ref={ref} {...layoutProps} />;
     case 'noir':
       return <QrPrintCardNoir ref={ref} {...layoutProps} />;
-    case 'kazakh':
-      return <QrPrintCardKazakh ref={ref} {...layoutProps} />;
     case 'classic':
     default:
       return <QrPrintCardClassic ref={ref} {...layoutProps} />;
