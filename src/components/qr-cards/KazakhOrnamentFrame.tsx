@@ -19,7 +19,7 @@ export default function KazakhOrnamentFrame() {
       src={ORNAMENT_FRAME_SRC}
       alt=""
       className="pointer-events-none absolute inset-0 z-[2] h-full w-full"
-      style={{ objectFit: 'fill', mixBlendMode: 'lighten' }}
+      style={{ objectFit: 'fill' }}
       draggable={false}
       aria-hidden
     />
