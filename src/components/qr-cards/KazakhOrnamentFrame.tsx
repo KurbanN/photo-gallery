@@ -1,6 +1,8 @@
 /** Декоративная рамка (PNG). См. public/qr-ornaments/kazakh/ATTRIBUTION.md */
 
-export const ORNAMENT_FRAME_SRC = '/qr-ornaments/kazakh/ornament-frame.png';
+import { publicAssetUrl } from '@/lib/public-asset-url';
+
+export const ORNAMENT_FRAME_SRC = publicAssetUrl('/qr-ornaments/kazakh/ornament-frame.png');
 
 export const ORNAMENT_FRAME_THEME = {
   bg: '#ffffff',
