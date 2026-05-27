@@ -3,7 +3,7 @@ import { toPng } from 'html-to-image';
 export async function downloadQrPrintCard(element: HTMLElement, filename: string): Promise<void> {
   const dataUrl = await toPng(element, {
     pixelRatio: 3,
-    backgroundColor: '#faf9f7',
+    backgroundColor: element.dataset.exportBg || '#faf9f7',
     cacheBust: true,
     useCORS: true,
   });

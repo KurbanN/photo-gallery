@@ -16,7 +16,8 @@ import {
   textareaClass,
 } from '@/components/organizer/organizer-ui';
 import { usePageTitle } from '@/lib/brand';
-import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings } from '@/lib/event-branding';
+import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings, readQrCardVariant } from '@/lib/event-branding';
+import type { QrCardVariant } from '@/lib/qr-card-variants';
 import { resolveBgUrl } from '@/lib/resolve-bg-url';
 import {
   deleteAdminEvent,
@@ -40,6 +41,7 @@ function readSettings(raw: EventSettings | undefined, title: string) {
     welcomeTitle: (s.welcomeTitle as string) || title,
     welcomeSubtitle: (s.welcomeSubtitle as string) || DEFAULT_GUEST_SUBTITLE,
     loginBgUrl: (s.loginBgUrl as string) || '',
+    qrCardVariant: readQrCardVariant(s),
   };
 }
 
@@ -101,6 +103,8 @@ export default function EventManage() {
   const [brandingSaving, setBrandingSaving] = useState(false);
   const [bgUploading, setBgUploading] = useState(false);
   const [brandingMsg, setBrandingMsg] = useState('');
+  const [qrCardVariant, setQrCardVariant] = useState<QrCardVariant>('classic');
+  const [variantSaving, setVariantSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const previewBgUrl = useMemo((): string | null => {
@@ -126,6 +130,7 @@ export default function EventManage() {
       setWelcomeTitle(branding.welcomeTitle);
       setWelcomeSubtitle(branding.welcomeSubtitle);
       setSavedLoginBgUrl(branding.loginBgUrl);
+      setQrCardVariant(branding.qrCardVariant);
       setPreviewBlobUrl(null);
       setPhotos(await listEventPhotos(id));
       setError('');
@@ -157,13 +162,18 @@ export default function EventManage() {
     setPreviewBlobUrl(URL.createObjectURL(file));
   };
 
+  const brandingSettingsExtras = useMemo(
+    () => ({ loginBgUrl: savedLoginBgUrl || undefined, qrCardVariant }),
+    [savedLoginBgUrl, qrCardVariant],
+  );
+
   const saveBrandingText = async () => {
     if (!id) return;
     setBrandingSaving(true);
     setBrandingMsg('');
     try {
       await updateEvent(id, {
-        settings: buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle, savedLoginBgUrl),
+        settings: buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle, brandingSettingsExtras),
       });
       setBrandingMsg('Тексты сохранены');
     } catch (e) {
@@ -185,7 +195,10 @@ export default function EventManage() {
     try {
       const { loginBgUrl } = await uploadLoginBg(id, file);
       await updateEvent(id, {
-        settings: buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle, loginBgUrl),
+        settings: buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle, {
+          loginBgUrl,
+          qrCardVariant,
+        }),
       });
       setSavedLoginBgUrl(loginBgUrl);
       if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
@@ -204,7 +217,10 @@ export default function EventManage() {
     setBgUploading(true);
     try {
       await updateEvent(id, {
-        settings: { ...buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle), loginBgUrl: '' },
+        settings: {
+          ...buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle, { qrCardVariant }),
+          loginBgUrl: '',
+        },
       });
       setSavedLoginBgUrl('');
       if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
@@ -215,6 +231,26 @@ export default function EventManage() {
       setBrandingMsg(e instanceof Error ? e.message : 'Ошибка');
     } finally {
       setBgUploading(false);
+    }
+  };
+
+  const saveQrCardVariant = async (next: QrCardVariant) => {
+    if (!id || next === qrCardVariant) return;
+    setVariantSaving(true);
+    const prev = qrCardVariant;
+    setQrCardVariant(next);
+    try {
+      await updateEvent(id, {
+        settings: buildGuestScreenSettings(title, welcomeTitle, welcomeSubtitle, {
+          loginBgUrl: savedLoginBgUrl || undefined,
+          qrCardVariant: next,
+        }),
+      });
+    } catch (e) {
+      setQrCardVariant(prev);
+      alert(e instanceof Error ? e.message : 'Не удалось сохранить дизайн');
+    } finally {
+      setVariantSaving(false);
     }
   };
 
@@ -486,6 +522,9 @@ export default function EventManage() {
                   guestPin={guestPin}
                   pinEnabled={pinEnabled}
                   bgUrl={previewBgUrl}
+                  variant={qrCardVariant}
+                  onVariantChange={saveQrCardVariant}
+                  variantSaving={variantSaving}
                 />
               </OrganizerSection>
             )}

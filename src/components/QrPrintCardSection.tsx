@@ -3,6 +3,7 @@ import { Download, Loader2, Printer } from 'lucide-react';
 import QrPrintCard, { QR_CARD_HEIGHT_PX, QR_CARD_WIDTH_PX } from '@/components/QrPrintCard';
 import { downloadQrPrintCard, printQrPrintCard } from '@/lib/download-qr-card';
 import { downloadQr } from '@/lib/organizer-api';
+import { QR_CARD_VARIANTS, normalizeQrCardVariant, type QrCardVariant } from '@/lib/qr-card-variants';
 
 type Props = {
   eventId: string;
@@ -14,6 +15,9 @@ type Props = {
   guestPin: string;
   pinEnabled: boolean;
   bgUrl?: string | null;
+  variant: QrCardVariant;
+  onVariantChange: (variant: QrCardVariant) => void | Promise<void>;
+  variantSaving?: boolean;
 };
 
 const PREVIEW_MAX_WIDTH = 320;
@@ -28,9 +32,13 @@ export default function QrPrintCardSection({
   guestPin,
   pinEnabled,
   bgUrl = null,
+  variant,
+  onVariantChange,
+  variantSaving = false,
 }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState<'png' | 'print' | null>(null);
+  const activeVariant = normalizeQrCardVariant(variant);
 
   const scale = PREVIEW_MAX_WIDTH / QR_CARD_WIDTH_PX;
   const previewHeight = Math.round(QR_CARD_HEIGHT_PX * scale);
@@ -40,7 +48,7 @@ export default function QrPrintCardSection({
     if (!el) return;
     setBusy('png');
     try {
-      await downloadQrPrintCard(el, `qr-card-${slug}`);
+      await downloadQrPrintCard(el, `qr-card-${slug}-${activeVariant}`);
     } catch {
       alert('Не удалось сохранить карточку');
     } finally {
@@ -62,8 +70,45 @@ export default function QrPrintCardSection({
   return (
     <div className="space-y-4">
       <p className="text-sm leading-relaxed text-muted">
-        Макет A6 для столов: QR и {pinEnabled && guestPin ? 'код гостей' : 'инструкция'}.
+        Макет A6 для столов: выберите дизайн, затем скачайте PNG или отправьте на печать.
       </p>
+
+      <div className="space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">Дизайн карточки</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {QR_CARD_VARIANTS.map((item) => {
+            const selected = item.id === activeVariant;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                disabled={variantSaving || busy !== null}
+                onClick={() => void onVariantChange(item.id)}
+                className={`rounded-sm border px-3 py-3 text-left transition-colors disabled:opacity-50 ${
+                  selected ? 'border-ink bg-ink/5 ring-1 ring-ink/20' : 'border-line hover:border-ink/30'
+                }`}
+              >
+                <div
+                  className="mb-2 flex h-10 items-end justify-between rounded-sm border border-black/5 px-2 pb-1.5"
+                  style={{ backgroundColor: item.previewBg }}
+                  aria-hidden
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.previewAccent }} />
+                  <span className="h-4 w-4 border border-black/15 bg-white" />
+                </div>
+                <span className="block text-[11px] font-semibold text-ink">{item.label}</span>
+                <span className="mt-0.5 block text-[10px] leading-snug text-muted">{item.description}</span>
+              </button>
+            );
+          })}
+        </div>
+        {variantSaving && (
+          <p className="flex items-center gap-2 text-xs text-muted">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Сохраняем выбор…
+          </p>
+        )}
+      </div>
 
       <div
         className="mx-auto overflow-hidden rounded-sm border border-line bg-line/30 shadow-inner"
@@ -85,7 +130,8 @@ export default function QrPrintCardSection({
             welcomeSubtitle={welcomeSubtitle}
             pin={guestPin}
             pinEnabled={pinEnabled}
-            bgUrl={bgUrl}
+            bgUrl={activeVariant === 'classic' ? bgUrl : null}
+            variant={activeVariant}
           />
         </div>
       </div>
@@ -102,7 +148,7 @@ export default function QrPrintCardSection({
       <div className="flex flex-col flex-wrap gap-2 sm:flex-row">
         <button
           type="button"
-          disabled={!guestUrl || busy !== null}
+          disabled={!guestUrl || busy !== null || variantSaving}
           onClick={() => void onDownloadCard()}
           className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-ink px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-paper disabled:opacity-50"
         >
@@ -111,7 +157,7 @@ export default function QrPrintCardSection({
         </button>
         <button
           type="button"
-          disabled={!guestUrl || busy !== null}
+          disabled={!guestUrl || busy !== null || variantSaving}
           onClick={onPrint}
           className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-ink px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink disabled:opacity-50"
         >
@@ -120,7 +166,7 @@ export default function QrPrintCardSection({
         </button>
         <button
           type="button"
-          disabled={busy !== null}
+          disabled={busy !== null || variantSaving}
           onClick={() => void downloadQr(eventId, slug)}
           className="inline-flex items-center justify-center gap-2 border border-line px-4 py-3 text-[10px] uppercase tracking-[0.15em] text-muted disabled:opacity-50"
         >
