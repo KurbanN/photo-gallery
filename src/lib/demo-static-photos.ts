@@ -16,9 +16,19 @@ export function isDemoStaticPhotoId(id: string): boolean {
   return id.startsWith('demo-static-');
 }
 
+function demoPhotosBaseUrl(): string {
+  return import.meta.env.BASE_URL.replace(/\/?$/, '/');
+}
+
+/** URL картинок из public/demo-photos (для главной и /e/demo). */
+export function getDemoPhotoUrls(limit = DEMO_FILES.length): string[] {
+  const base = demoPhotosBaseUrl();
+  return DEMO_FILES.slice(0, limit).map((name) => `${base}demo-photos/${name}`);
+}
+
 /** Локальные превью для /e/demo, если API ещё без сида. */
 export function buildDemoStaticPhotos(): PhotoEntry[] {
-  const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+  const base = demoPhotosBaseUrl();
   const now = Date.now();
   return DEMO_FILES.map((name, i) => ({
     id: `demo-static-${i}`,

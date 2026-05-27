@@ -50,43 +50,45 @@ export default function GuestGalleryPanel({
             const fav = favoriteIds.has(p.id);
             const isVideo = mediaTypeOf(p) === 'video';
             return (
-              <li key={p.id} className="relative">
-                <button
-                  type="button"
-                  onClick={() => onOpen(p)}
-                  className="block aspect-square w-full overflow-hidden border border-line bg-line/30"
-                >
-                  {isVideo ? (
-                    <div className="relative h-full w-full bg-ink/90">
-                      <video
-                        src={p.url}
-                        className="h-full w-full object-cover"
-                        muted
-                        playsInline
-                        preload="metadata"
-                      />
-                      <span className="absolute inset-0 flex items-center justify-center text-[10px] uppercase tracking-[0.2em] text-white/90">
-                        ▶ Видео
-                      </span>
-                    </div>
-                  ) : (
-                    <img src={p.url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleFavorite(p.id);
-                  }}
-                  className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 backdrop-blur-sm"
-                  aria-label={fav ? 'Убрать из избранного' : 'В избранное'}
-                >
-                  <Heart
-                    className={`h-4 w-4 ${fav ? 'fill-white text-white' : 'text-white/90'}`}
-                    strokeWidth={1.5}
-                  />
-                </button>
+              <li key={p.id}>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => onOpen(p)}
+                    className="block aspect-square w-full overflow-hidden border border-line bg-line/30"
+                  >
+                    {isVideo ? (
+                      <div className="relative h-full w-full bg-ink/90">
+                        <video
+                          src={p.url}
+                          className="h-full w-full object-cover"
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center text-[10px] uppercase tracking-[0.2em] text-white/90">
+                          ▶ Видео
+                        </span>
+                      </div>
+                    ) : (
+                      <img src={p.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleFavorite(p.id);
+                    }}
+                    className="absolute bottom-2 right-2 flex size-8 items-center justify-center rounded-full bg-black/45 backdrop-blur-sm"
+                    aria-label={fav ? 'Убрать из избранного' : 'В избранное'}
+                  >
+                    <Heart
+                      className={`block size-4 ${fav ? 'fill-white text-white' : 'text-white/90'}`}
+                      strokeWidth={1.5}
+                    />
+                  </button>
+                </div>
                 {p.author && (
                   <p className="mt-1 truncate text-[10px] text-muted">{p.author}</p>
                 )}
