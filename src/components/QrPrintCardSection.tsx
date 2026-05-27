@@ -1,8 +1,14 @@
 import { useRef, useState } from 'react';
 import { Download, Loader2, Printer } from 'lucide-react';
-import QrPrintCard, { QR_CARD_HEIGHT_PX, QR_CARD_WIDTH_PX } from '@/components/QrPrintCard';
+import QrPrintCard from '@/components/QrPrintCard';
 import { downloadQrPrintCard, printQrPrintCard } from '@/lib/download-qr-card';
 import { downloadQr } from '@/lib/organizer-api';
+import {
+  normalizeQrPrintFormat,
+  QR_PRINT_FORMAT_OPTIONS,
+  QR_PRINT_FORMAT_SPECS,
+  type QrPrintFormat,
+} from '@/lib/qr-print-formats';
 import { QR_CARD_VARIANTS, normalizeQrCardVariant, type QrCardVariant } from '@/lib/qr-card-variants';
 
 type Props = {
@@ -36,45 +42,76 @@ export default function QrPrintCardSection({
   onVariantChange,
   variantSaving = false,
 }: Props) {
-  const cardRef = useRef<HTMLDivElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+  const [printFormat, setPrintFormat] = useState<QrPrintFormat>('card');
   const [busy, setBusy] = useState<'png' | 'print' | null>(null);
   const activeVariant = normalizeQrCardVariant(variant);
+  const format = normalizeQrPrintFormat(printFormat);
+  const formatSpec = QR_PRINT_FORMAT_SPECS[format];
 
-  const scale = PREVIEW_MAX_WIDTH / QR_CARD_WIDTH_PX;
-  const previewHeight = Math.round(QR_CARD_HEIGHT_PX * scale);
+  const scale = PREVIEW_MAX_WIDTH / formatSpec.widthPx;
+  const previewHeight = Math.round(formatSpec.heightPx * scale);
 
-  const onDownloadCard = async () => {
-    const el = cardRef.current;
+  const onDownload = async () => {
+    const el = printRef.current;
     if (!el) return;
     setBusy('png');
     try {
-      await downloadQrPrintCard(el, `qr-card-${slug}-${activeVariant}`);
+      const name = `${formatSpec.filenamePrefix}-${slug}-${activeVariant}`;
+      await downloadQrPrintCard(el, name, { format });
     } catch {
-      alert('Не удалось сохранить карточку');
+      alert('Не удалось сохранить макет');
     } finally {
       setBusy(null);
     }
   };
 
   const onPrint = () => {
-    const el = cardRef.current;
+    const el = printRef.current;
     if (!el) return;
     setBusy('print');
     try {
-      printQrPrintCard(el);
+      printQrPrintCard(el, { format });
     } finally {
       setTimeout(() => setBusy(null), 600);
     }
   };
 
+  const isCard = format === 'card';
+  const downloadLabel = isCard ? 'PNG карточка' : 'PNG баннер';
+
   return (
     <div className="space-y-4">
       <p className="text-sm leading-relaxed text-muted">
-        Макет A6 для столов: выберите дизайн, затем скачайте PNG или отправьте на печать.
+        Выберите формат и дизайн, затем скачайте PNG или отправьте на печать. Для типографии укажите размер{' '}
+        <span className="font-medium text-ink">{formatSpec.physicalLabel}</span>.
       </p>
 
       <div className="space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">Дизайн карточки</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">Формат печати</p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {QR_PRINT_FORMAT_OPTIONS.map((item) => {
+            const selected = item.id === format;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                disabled={variantSaving || busy !== null}
+                onClick={() => setPrintFormat(item.id)}
+                className={`rounded-sm border px-3 py-3 text-left transition-colors disabled:opacity-50 ${
+                  selected ? 'border-ink bg-ink/5 ring-1 ring-ink/20' : 'border-line hover:border-ink/30'
+                }`}
+              >
+                <span className="block text-[11px] font-semibold text-ink">{item.label}</span>
+                <span className="mt-0.5 block text-[10px] leading-snug text-muted">{item.description}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">Дизайн</p>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {QR_CARD_VARIANTS.map((item) => {
@@ -118,14 +155,16 @@ export default function QrPrintCardSection({
       >
         <div
           style={{
-            width: QR_CARD_WIDTH_PX,
-            height: QR_CARD_HEIGHT_PX,
+            width: formatSpec.widthPx,
+            height: formatSpec.heightPx,
             transform: `scale(${scale})`,
             transformOrigin: 'top left',
           }}
         >
           <QrPrintCard
-            ref={cardRef}
+            key={format}
+            ref={printRef}
+            format={format}
             guestUrl={guestUrl}
             eventTitle={eventTitle}
             welcomeTitle={welcomeTitle}
@@ -143,7 +182,7 @@ export default function QrPrintCardSection({
       )}
       {pinEnabled && !guestPin && (
         <p className="text-sm text-amber-800">
-          Задайте код для гостей выше — он появится на карточке.
+          Задайте код для гостей выше — он появится на макете.
         </p>
       )}
 
@@ -151,11 +190,11 @@ export default function QrPrintCardSection({
         <button
           type="button"
           disabled={!guestUrl || busy !== null || variantSaving}
-          onClick={() => void onDownloadCard()}
+          onClick={() => void onDownload()}
           className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-ink px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-paper disabled:opacity-50"
         >
           {busy === 'png' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-          PNG карточка
+          {downloadLabel}
         </button>
         <button
           type="button"

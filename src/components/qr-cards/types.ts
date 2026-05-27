@@ -1,4 +1,5 @@
 import type { QrCardVariant } from '@/lib/qr-card-variants';
+import type { QrPrintFormat } from '@/lib/qr-print-formats';
 
 export type QrPrintCardProps = {
   guestUrl: string;
@@ -11,6 +12,8 @@ export type QrPrintCardProps = {
   /** Фон как на экране входа — только для классического макета */
   bgUrl?: string | null;
   variant?: QrCardVariant;
+  /** card = A6; banner-* = крупный формат для печати */
+  format?: QrPrintFormat;
 };
 
 export type QrCardLayoutProps = QrPrintCardProps & {
@@ -18,4 +21,5 @@ export type QrCardLayoutProps = QrPrintCardProps & {
   headline: string;
   subtitle: string;
   showPin: boolean;
+  qrDisplaySize: number;
 };

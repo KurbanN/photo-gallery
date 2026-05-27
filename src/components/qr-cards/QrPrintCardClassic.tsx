@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
-import { BotanicalWreath, CardShell, PinBlock, QrBlock, QrCardFooter } from './QrCardShared';
+import { normalizeQrPrintFormat, scalePx, scaleWidthPx } from '@/lib/qr-print-formats';
+import { PinBlock, PrintShell, QrBlock, QrCardFooter } from './QrCardShared';
 import type { QrCardLayoutProps } from './types';
 
 const QrPrintCardClassic = forwardRef<HTMLDivElement, QrCardLayoutProps>(function QrPrintCardClassic(
@@ -12,11 +13,19 @@ const QrPrintCardClassic = forwardRef<HTMLDivElement, QrCardLayoutProps>(functio
     headline,
     subtitle,
     showPin,
+    format: formatProp,
+    qrDisplaySize,
   },
   ref,
 ) {
+  const format = normalizeQrPrintFormat(formatProp);
+  const s = (px: number) => scalePx(px, format);
+  const sw = (px: number) => scaleWidthPx(px, format);
+  const inset = sw(28);
+  const corner = s(40);
+
   return (
-    <CardShell ref={ref} exportBg="#faf9f7" className="bg-paper text-ink">
+    <PrintShell ref={ref} format={format} exportBg="#faf9f7" className="bg-paper text-ink">
       {bgUrl ? (
         <div
           className="pointer-events-none absolute inset-0 bg-cover bg-center scale-105"
@@ -31,46 +40,81 @@ const QrPrintCardClassic = forwardRef<HTMLDivElement, QrCardLayoutProps>(functio
         aria-hidden
       />
 
-      <div className="pointer-events-none absolute inset-[28px] border border-ink/25" aria-hidden />
-      <div className="pointer-events-none absolute inset-[36px] border border-ink/10" aria-hidden />
-      <span className="pointer-events-none absolute left-[28px] top-[28px] h-10 w-10 border-l border-t border-ink/40" aria-hidden />
-      <span className="pointer-events-none absolute right-[28px] top-[28px] h-10 w-10 border-r border-t border-ink/40" aria-hidden />
-      <span className="pointer-events-none absolute bottom-[28px] left-[28px] h-10 w-10 border-b border-l border-ink/40" aria-hidden />
-      <span className="pointer-events-none absolute bottom-[28px] right-[28px] h-10 w-10 border-b border-r border-ink/40" aria-hidden />
+      <div className="pointer-events-none absolute border border-ink/25" style={{ inset }} aria-hidden />
+      <div className="pointer-events-none absolute border border-ink/10" style={{ inset: inset + sw(8) }} aria-hidden />
+      <span
+        className="pointer-events-none absolute border-l border-t border-ink/40"
+        style={{ left: inset, top: inset, width: corner, height: corner }}
+        aria-hidden
+      />
+      <span
+        className="pointer-events-none absolute border-r border-t border-ink/40"
+        style={{ right: inset, top: inset, width: corner, height: corner }}
+        aria-hidden
+      />
+      <span
+        className="pointer-events-none absolute border-b border-l border-ink/40"
+        style={{ bottom: inset, left: inset, width: corner, height: corner }}
+        aria-hidden
+      />
+      <span
+        className="pointer-events-none absolute border-b border-r border-ink/40"
+        style={{ bottom: inset, right: inset, width: corner, height: corner }}
+        aria-hidden
+      />
 
-      <div className="relative z-10 flex h-full flex-col items-center px-[72px] pt-[80px] pb-[64px]">
-        <p className="mb-6 text-center uppercase tracking-[0.45em] text-muted" style={{ fontSize: 22 }}>
+      <div
+        className="relative z-10 flex h-full flex-col items-center"
+        style={{
+          paddingLeft: sw(72),
+          paddingRight: sw(72),
+          paddingTop: s(80),
+          paddingBottom: s(64),
+        }}
+      >
+        <p className="text-center uppercase tracking-[0.45em] text-muted" style={{ fontSize: s(22), marginBottom: s(24) }}>
           {brandName}
         </p>
 
         <h1
-          className="mb-4 max-w-full text-center leading-[1.15] text-ink"
-          style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 64, fontWeight: 500 }}
+          className="max-w-full text-center leading-[1.15] text-ink"
+          style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: s(64),
+            fontWeight: 500,
+            marginBottom: s(16),
+          }}
         >
           {headline}
         </h1>
 
-        <p className="mb-10 max-w-[780px] text-center leading-relaxed text-muted" style={{ fontSize: 26 }}>
+        <p
+          className="text-center leading-relaxed text-muted"
+          style={{ fontSize: s(26), marginBottom: s(40), maxWidth: sw(780) }}
+        >
           {subtitle}
         </p>
 
-        <QrBlock qrSrc={qrSrc} frameClassName="border border-line shadow-[0_8px_32px_rgba(10,10,10,0.06)]" />
+        <QrBlock qrSrc={qrSrc} size={qrDisplaySize} frameClassName="border border-line shadow-[0_8px_32px_rgba(10,10,10,0.06)]" />
 
-        <p className="mb-8 mt-8 text-center uppercase tracking-[0.28em] text-muted" style={{ fontSize: 20 }}>
+        <p
+          className="text-center uppercase tracking-[0.28em] text-muted"
+          style={{ fontSize: s(20), marginTop: s(32), marginBottom: s(32) }}
+        >
           Отсканируйте камерой телефона
         </p>
 
         {showPin ? (
-          <PinBlock pin={pin!} />
+          <PinBlock pin={pin!} format={format} />
         ) : (
-          <p className="mb-6 text-center text-muted" style={{ fontSize: 24 }}>
+          <p className="text-center text-muted" style={{ fontSize: s(24), marginBottom: s(24) }}>
             После сканирования загрузите фото с телефона
           </p>
         )}
 
-        <QrCardFooter showPin={showPin} guestUrl={guestUrl} />
+        <QrCardFooter showPin={showPin} guestUrl={guestUrl} format={format} />
       </div>
-    </CardShell>
+    </PrintShell>
   );
 });
 

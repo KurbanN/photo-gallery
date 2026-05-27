@@ -1,7 +1,14 @@
 import { forwardRef, type ReactNode } from 'react';
+import {
+  QR_CARD_HEIGHT_PX,
+  QR_CARD_WIDTH_PX,
+  QR_PRINT_FORMAT_SPECS,
+  scalePx,
+  scaleWidthPx,
+  type QrPrintFormat,
+} from '@/lib/qr-print-formats';
 
-export const QR_CARD_WIDTH_PX = 1050;
-export const QR_CARD_HEIGHT_PX = 1485;
+export { QR_CARD_HEIGHT_PX, QR_CARD_WIDTH_PX };
 
 type QrBlockProps = {
   qrSrc: string | null;
@@ -11,10 +18,11 @@ type QrBlockProps = {
 };
 
 export function QrBlock({ qrSrc, size = 400, className = '', frameClassName = '' }: QrBlockProps) {
+  const pad = Math.round(size * 0.1);
   return (
     <div
-      className={`flex items-center justify-center bg-white p-5 ${frameClassName}`}
-      style={{ width: size + 40, height: size + 40 }}
+      className={`flex items-center justify-center bg-white ${frameClassName}`}
+      style={{ width: size + pad * 2, height: size + pad * 2, padding: pad }}
     >
       {qrSrc ? (
         <img src={qrSrc} alt="" width={size} height={size} className={`block ${className}`} />
@@ -27,6 +35,7 @@ export function QrBlock({ qrSrc, size = 400, className = '', frameClassName = ''
 
 type PinBlockProps = {
   pin: string;
+  format?: QrPrintFormat;
   labelClassName?: string;
   codeClassName?: string;
   hintClassName?: string;
@@ -35,23 +44,34 @@ type PinBlockProps = {
 
 export function PinBlock({
   pin,
+  format = 'card',
   labelClassName = 'text-muted',
   codeClassName = 'text-ink',
   hintClassName = 'text-muted',
   frameClassName = 'border border-ink/15 bg-white/80',
 }: PinBlockProps) {
+  const s = (px: number) => scalePx(px, format);
   return (
-    <div className={`w-full max-w-[720px] px-10 py-8 text-center ${frameClassName}`}>
-      <p className={`mb-3 uppercase tracking-[0.35em] ${labelClassName}`} style={{ fontSize: 18 }}>
+    <div
+      className={`w-full text-center ${frameClassName}`}
+      style={{
+        maxWidth: scaleWidthPx(720, format),
+        paddingLeft: scaleWidthPx(40, format),
+        paddingRight: scaleWidthPx(40, format),
+        paddingTop: s(32),
+        paddingBottom: s(32),
+      }}
+    >
+      <p className={`mb-3 uppercase tracking-[0.35em] ${labelClassName}`} style={{ fontSize: s(18) }}>
         Код мероприятия
       </p>
       <p
         className={`font-semibold tracking-[0.42em] ${codeClassName}`}
-        style={{ fontSize: 56, letterSpacing: '0.42em' }}
+        style={{ fontSize: s(56), letterSpacing: '0.42em' }}
       >
         {pin.trim()}
       </p>
-      <p className={`mt-4 ${hintClassName}`} style={{ fontSize: 22 }}>
+      <p className={`mt-4 ${hintClassName}`} style={{ fontSize: s(22) }}>
         Введите код после сканирования
       </p>
     </div>
@@ -61,27 +81,38 @@ export function PinBlock({
 type FooterProps = {
   showPin: boolean;
   guestUrl: string;
+  format?: QrPrintFormat;
   textClassName?: string;
   urlClassName?: string;
   borderClassName?: string;
 };
 
-export function QrCardFooter({ showPin, guestUrl, textClassName = 'text-muted', urlClassName = 'text-ink/50', borderClassName = 'border-line/80' }: FooterProps) {
+export function QrCardFooter({
+  showPin,
+  guestUrl,
+  format = 'card',
+  textClassName = 'text-muted',
+  urlClassName = 'text-ink/50',
+  borderClassName = 'border-line/80',
+}: FooterProps) {
+  const s = (px: number) => scalePx(px, format);
   return (
-    <div className={`mt-auto w-full border-t pt-8 text-center ${borderClassName}`}>
-      <p className={textClassName} style={{ fontSize: 18 }}>
+    <div className={`mt-auto w-full border-t text-center ${borderClassName}`} style={{ paddingTop: s(32) }}>
+      <p className={textClassName} style={{ fontSize: s(18) }}>
         {showPin ? '1. Сканируйте QR · 2. Введите код · 3. Загрузите фото' : 'Сканируйте QR и загрузите фото'}
       </p>
-      <p className={`mt-3 break-all ${urlClassName}`} style={{ fontSize: 16, wordBreak: 'break-all' }}>
+      <p className={`mt-3 break-all ${urlClassName}`} style={{ fontSize: s(16), wordBreak: 'break-all' }}>
         {guestUrl.replace(/^https?:\/\//, '')}
       </p>
     </div>
   );
 }
 
-export function BotanicalWreath({ color = '#6b7f5c' }: { color?: string }) {
+export function BotanicalWreath({ color = '#6b7f5c', format = 'card' as QrPrintFormat }: { color?: string; format?: QrPrintFormat }) {
+  const w = scaleWidthPx(280, format);
+  const h = scalePx(42, format);
   return (
-    <svg viewBox="0 0 320 48" fill="none" className="mx-auto mb-8 block" width={280} height={42} aria-hidden>
+    <svg viewBox="0 0 320 48" fill="none" className="mx-auto block" style={{ width: w, height: h, marginBottom: scalePx(32, format) }} aria-hidden>
       <path
         d="M8 24c20-18 44-18 64 0s44 18 64 0 44-18 64 0 44 18 64 0"
         stroke={color}
@@ -97,23 +128,26 @@ export function BotanicalWreath({ color = '#6b7f5c' }: { color?: string }) {
   );
 }
 
-export const CardShell = forwardRef<
+export const PrintShell = forwardRef<
   HTMLDivElement,
   {
+    format?: QrPrintFormat;
     exportBg: string;
     className?: string;
     style?: React.CSSProperties;
     children: ReactNode;
   }
->(function CardShell({ exportBg, className, style, children }, ref) {
+>(function PrintShell({ format = 'card', exportBg, className, style, children }, ref) {
+  const spec = QR_PRINT_FORMAT_SPECS[format];
   return (
     <div
       ref={ref}
       className={`qr-print-card relative overflow-hidden ${className ?? ''}`}
       data-export-bg={exportBg}
+      data-print-format={format}
       style={{
-        width: QR_CARD_WIDTH_PX,
-        height: QR_CARD_HEIGHT_PX,
+        width: spec.widthPx,
+        height: spec.heightPx,
         fontFamily: "'Montserrat', system-ui, sans-serif",
         ...style,
       }}
@@ -122,3 +156,6 @@ export const CardShell = forwardRef<
     </div>
   );
 });
+
+/** @deprecated используйте PrintShell */
+export const CardShell = PrintShell;

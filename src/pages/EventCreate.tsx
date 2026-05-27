@@ -14,7 +14,6 @@ export default function EventCreate() {
   const [accessChecked, setAccessChecked] = useState(false);
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
-  const [plan, setPlan] = useState<'lite' | 'party' | 'premium'>('party');
   const [endsAt, setEndsAt] = useState('');
   const [welcomeTitle, setWelcomeTitle] = useState('');
   const [welcomeSubtitle, setWelcomeSubtitle] = useState(DEFAULT_GUEST_SUBTITLE);
@@ -78,7 +77,7 @@ export default function EventCreate() {
       const res = await createEvent({
         title: trimmedTitle,
         slug: slug.trim() || undefined,
-        plan,
+        plan: 'lite',
         endsAt: endsAt || undefined,
         settings: buildGuestScreenSettings(trimmedTitle, welcomeTitle, welcomeSubtitle),
       });
@@ -163,28 +162,15 @@ export default function EventCreate() {
                 className="w-full border border-line px-3 py-2 mt-1"
               />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="text-xs uppercase text-muted">Тариф</label>
-                <select
-                  value={plan}
-                  onChange={(e) => setPlan(e.target.value as 'lite' | 'party' | 'premium')}
-                  className="w-full border border-line px-3 py-2 mt-1"
-                >
-                  <option value="lite">Lite — 300 фото</option>
-                  <option value="party">Party — 2000 фото</option>
-                  <option value="premium">Premium — 5000 фото</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs uppercase text-muted">Окончание приёма фото</label>
-                <input
-                  type="datetime-local"
-                  value={endsAt}
-                  onChange={(e) => setEndsAt(e.target.value)}
-                  className="w-full border border-line px-3 py-2 mt-1"
-                />
-              </div>
+            <p className="text-sm text-muted">До 300 фотографий от гостей.</p>
+            <div>
+              <label className="text-xs uppercase text-muted">Окончание приёма фото</label>
+              <input
+                type="datetime-local"
+                value={endsAt}
+                onChange={(e) => setEndsAt(e.target.value)}
+                className="w-full border border-line px-3 py-2 mt-1"
+              />
             </div>
           </section>
           )}

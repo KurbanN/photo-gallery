@@ -14,7 +14,7 @@ export type { QrCardVariant } from '@/lib/qr-card-variants';
 const QrPrintCard = forwardRef<HTMLDivElement, QrPrintCardProps>(function QrPrintCard(props, ref) {
   const variant = normalizeQrCardVariant(props.variant);
   const content = useQrCardContent(props);
-  const layoutProps = { ...props, ...content };
+  const layoutProps = { ...props, ...content, format: content.format };
 
   switch (variant) {
     case 'minimal':

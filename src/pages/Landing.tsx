@@ -14,9 +14,13 @@ export default function Landing() {
       </header>
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center max-w-lg mx-auto">
         <h1 className="font-serif text-4xl md:text-5xl text-ink mb-4">Живая лента для мероприятий</h1>
-        <p className="text-muted text-sm leading-relaxed mb-10">
+        <p className="text-muted text-sm leading-relaxed mb-6">
           QR на столах — гости снимают с телефона — все фото в одной галерее в реальном времени. Свадьбы,
           дни рождения, корпоративы.
+        </p>
+        <p className="mb-10">
+          <span className="text-muted line-through text-lg mr-2">30&nbsp;000&nbsp;₸</span>
+          <span className="text-ink font-serif text-3xl">15&nbsp;000&nbsp;₸</span>
         </p>
         <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
           <Link
@@ -36,13 +40,6 @@ export default function Landing() {
           <div>
             <p className="text-ink font-medium mb-1">Для организаторов</p>
             <p>Уникальная ссылка, PIN для гостей, QR для печати.</p>
-          </div>
-          <div>
-            <p className="text-ink font-medium mb-1">Тариф</p>
-            <p>
-              <span className="text-ink font-medium">15&nbsp;000&nbsp;₸</span> за мероприятие — все фото гостей
-              сохраняются в облаке, доступны вам в кабинете и остаются после праздника.
-            </p>
           </div>
           <div>
             <p className="text-ink font-medium mb-1">Связаться</p>

@@ -1,50 +1,86 @@
 import { forwardRef } from 'react';
-import { CardShell, PinBlock, QrBlock, QrCardFooter } from './QrCardShared';
+import { normalizeQrPrintFormat, scalePx, scaleWidthPx } from '@/lib/qr-print-formats';
+import { PinBlock, PrintShell, QrBlock, QrCardFooter } from './QrCardShared';
 import type { QrCardLayoutProps } from './types';
 
 const QrPrintCardMinimal = forwardRef<HTMLDivElement, QrCardLayoutProps>(function QrPrintCardMinimal(
-  { guestUrl, pin, brandName = 'Allmemories', qrSrc, headline, subtitle, showPin },
+  {
+    guestUrl,
+    pin,
+    brandName = 'Allmemories',
+    qrSrc,
+    headline,
+    subtitle,
+    showPin,
+    format: formatProp,
+    qrDisplaySize,
+  },
   ref,
 ) {
+  const format = normalizeQrPrintFormat(formatProp);
+  const s = (px: number) => scalePx(px, format);
+  const sw = (px: number) => scaleWidthPx(px, format);
+
   return (
-    <CardShell ref={ref} exportBg="#ffffff" className="bg-white text-ink">
-      <div className="relative z-10 flex h-full flex-col items-center px-[88px] pt-[96px] pb-[72px]">
+    <PrintShell ref={ref} format={format} exportBg="#ffffff" className="bg-white text-ink">
+      <div
+        className="relative z-10 flex h-full flex-col items-center"
+        style={{
+          paddingLeft: sw(88),
+          paddingRight: sw(88),
+          paddingTop: s(96),
+          paddingBottom: s(72),
+        }}
+      >
         <p
-          className="mb-10 text-center uppercase tracking-[0.55em] text-ink/45"
-          style={{ fontSize: 18, fontWeight: 500 }}
+          className="text-center uppercase tracking-[0.55em] text-ink/45"
+          style={{ fontSize: s(18), fontWeight: 500, marginBottom: s(40) }}
         >
           {brandName}
         </p>
 
-        <div className="mb-10 h-px w-24 bg-ink/15" aria-hidden />
+        <div className="bg-ink/15" style={{ marginBottom: s(40), height: 1, width: sw(96) }} aria-hidden />
 
         <h1
-          className="mb-5 max-w-full text-center leading-[1.1] text-ink"
-          style={{ fontFamily: "'Montserrat', system-ui, sans-serif", fontSize: 52, fontWeight: 600, letterSpacing: '-0.02em' }}
+          className="max-w-full text-center leading-[1.1] text-ink"
+          style={{
+            fontFamily: "'Montserrat', system-ui, sans-serif",
+            fontSize: s(52),
+            fontWeight: 600,
+            letterSpacing: '-0.02em',
+            marginBottom: s(20),
+          }}
         >
           {headline}
         </h1>
 
-        <p className="mb-14 max-w-[680px] text-center leading-relaxed text-muted" style={{ fontSize: 24 }}>
+        <p
+          className="text-center leading-relaxed text-muted"
+          style={{ fontSize: s(24), marginBottom: s(56), maxWidth: sw(680) }}
+        >
           {subtitle}
         </p>
 
-        <QrBlock qrSrc={qrSrc} size={420} frameClassName="border border-ink/10 shadow-none p-6" />
+        <QrBlock qrSrc={qrSrc} size={qrDisplaySize} frameClassName="border border-ink/10 shadow-none" />
 
-        <p className="mb-10 mt-10 text-center uppercase tracking-[0.32em] text-ink/40" style={{ fontSize: 17 }}>
+        <p
+          className="text-center uppercase tracking-[0.32em] text-ink/40"
+          style={{ fontSize: s(17), marginTop: s(40), marginBottom: s(40) }}
+        >
           Scan · Upload · Share
         </p>
 
         {showPin ? (
           <PinBlock
             pin={pin!}
+            format={format}
             frameClassName="border border-ink/10 bg-ink/[0.02]"
             labelClassName="text-ink/45"
             codeClassName="text-ink"
             hintClassName="text-muted"
           />
         ) : (
-          <p className="mb-6 text-center text-muted" style={{ fontSize: 22 }}>
+          <p className="text-center text-muted" style={{ fontSize: s(22), marginBottom: s(24) }}>
             Отсканируйте и загрузите фото с телефона
           </p>
         )}
@@ -52,12 +88,13 @@ const QrPrintCardMinimal = forwardRef<HTMLDivElement, QrCardLayoutProps>(functio
         <QrCardFooter
           showPin={showPin}
           guestUrl={guestUrl}
+          format={format}
           borderClassName="border-ink/10"
           textClassName="text-ink/45"
           urlClassName="text-ink/30"
         />
       </div>
-    </CardShell>
+    </PrintShell>
   );
 });
 
