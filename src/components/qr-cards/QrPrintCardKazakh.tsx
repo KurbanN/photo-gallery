@@ -1,7 +1,9 @@
 import { forwardRef } from 'react';
-import KazakhOrnamentFrame, { KAZAKH_THEME } from './KazakhOrnamentFrame';
+import KazakhOrnamentFrame, { ORNAMENT_FRAME_THEME } from './KazakhOrnamentFrame';
 import { CardShell, PinBlock, QrBlock, QrCardFooter } from './QrCardShared';
 import type { QrCardLayoutProps } from './types';
+
+const T = ORNAMENT_FRAME_THEME;
 
 const QrPrintCardKazakh = forwardRef<HTMLDivElement, QrCardLayoutProps>(function QrPrintCardKazakh(
   { guestUrl, pin, brandName = 'Allmemories', qrSrc, headline, subtitle, showPin },
@@ -10,56 +12,43 @@ const QrPrintCardKazakh = forwardRef<HTMLDivElement, QrCardLayoutProps>(function
   return (
     <CardShell
       ref={ref}
-      exportBg={KAZAKH_THEME.bg}
+      exportBg={T.bg}
       className="text-ink"
-      style={{ backgroundColor: KAZAKH_THEME.bg }}
+      style={{ backgroundColor: T.bg }}
     >
-      <KazakhOrnamentFrame color={KAZAKH_THEME.blue} accent={KAZAKH_THEME.gold} />
+      <KazakhOrnamentFrame />
 
-      <div className="relative z-10 flex h-full flex-col items-center px-[88px] pt-[108px] pb-[72px]">
+      <div className="relative z-10 flex h-full flex-col items-center px-[96px] pt-[112px] pb-[88px]">
         <p
-          className="mb-4 text-center uppercase tracking-[0.48em]"
-          style={{ fontSize: 20, color: KAZAKH_THEME.terracotta, fontWeight: 600 }}
+          className="mb-5 text-center uppercase tracking-[0.42em]"
+          style={{ fontSize: 20, color: T.burgundy, fontWeight: 600 }}
         >
           {brandName}
         </p>
 
-        <div className="mb-6 flex items-center gap-4" aria-hidden>
-          <span className="h-px w-16" style={{ backgroundColor: `${KAZAKH_THEME.gold}66` }} />
-          <span
-            className="inline-block h-2.5 w-2.5 rotate-45 border"
-            style={{ borderColor: KAZAKH_THEME.gold, backgroundColor: `${KAZAKH_THEME.gold}22` }}
-          />
-          <span className="h-px w-16" style={{ backgroundColor: `${KAZAKH_THEME.gold}66` }} />
-        </div>
-
         <h1
-          className="mb-3 max-w-full text-center leading-[1.1] text-ink"
+          className="mb-4 max-w-full text-center leading-[1.1] text-ink"
           style={{
             fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 62,
+            fontSize: 60,
             fontWeight: 500,
-            color: KAZAKH_THEME.ink,
           }}
         >
           {headline}
         </h1>
 
-        <p
-          className="mb-8 max-w-[720px] text-center leading-relaxed"
-          style={{ fontSize: 24, color: KAZAKH_THEME.muted }}
-        >
+        <p className="mb-9 max-w-[700px] text-center leading-relaxed text-muted" style={{ fontSize: 24 }}>
           {subtitle}
         </p>
 
         <QrBlock
           qrSrc={qrSrc}
-          frameClassName="rounded-sm border-2 border-[#1e4d6b]/40 shadow-[0_6px_28px_rgba(30,77,107,0.12)]"
+          frameClassName="border border-[#9a7348]/45 shadow-[0_6px_24px_rgba(10,10,10,0.08)]"
         />
 
         <p
-          className="mb-6 mt-8 text-center uppercase tracking-[0.26em]"
-          style={{ fontSize: 18, color: KAZAKH_THEME.blue }}
+          className="mb-6 mt-8 text-center uppercase tracking-[0.24em]"
+          style={{ fontSize: 17, color: T.gold }}
         >
           Отсканируйте камерой телефона
         </p>
@@ -67,13 +56,13 @@ const QrPrintCardKazakh = forwardRef<HTMLDivElement, QrCardLayoutProps>(function
         {showPin ? (
           <PinBlock
             pin={pin!}
-            frameClassName="rounded-sm border-2 border-[#1e4d6b]/25 bg-white/85"
-            labelClassName="text-[#1e4d6b]"
+            frameClassName="border border-[#8b2e3c]/25 bg-white/90"
+            labelClassName="text-[#8b2e3c]"
             codeClassName="text-ink"
-            hintClassName="text-[#5c5348]"
+            hintClassName="text-muted"
           />
         ) : (
-          <p className="mb-4 text-center" style={{ fontSize: 22, color: KAZAKH_THEME.muted }}>
+          <p className="mb-4 text-center text-muted" style={{ fontSize: 22 }}>
             После сканирования загрузите фото с телефона
           </p>
         )}
@@ -81,9 +70,9 @@ const QrPrintCardKazakh = forwardRef<HTMLDivElement, QrCardLayoutProps>(function
         <QrCardFooter
           showPin={showPin}
           guestUrl={guestUrl}
-          borderClassName="border-[#1e4d6b]/20"
-          textClassName="text-[#5c5348]"
-          urlClassName="text-[#1e4d6b]/65"
+          borderClassName="border-[#9a7348]/25"
+          textClassName="text-muted"
+          urlClassName="text-[#9a7348]/80"
         />
       </div>
     </CardShell>

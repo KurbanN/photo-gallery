@@ -39,10 +39,10 @@ export const QR_CARD_VARIANTS: QrCardVariantMeta[] = [
   },
   {
     id: 'kazakh',
-    label: 'Орнамент',
-    description: 'Казахский узор по краям',
-    previewBg: '#faf6ee',
-    previewAccent: '#1e4d6b',
+    label: 'Рамка',
+    description: 'Бордо и золото на белом',
+    previewBg: '#ffffff',
+    previewAccent: '#8b2e3c',
   },
 ];
 
