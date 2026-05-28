@@ -36,30 +36,57 @@ export default function InvitePublic() {
   if (loading) return <div className="p-6">Загрузка...</div>;
   if (error || !invite) return <div className="p-6 text-red-700">{error || 'Не найдено'}</div>;
 
+  const pageBg = invite.template === 'invitarium' ? 'bg-[#F8F8F7]' : 'bg-[#FAFAF7]';
+
   return (
-    <div className="min-h-dvh bg-[#FAFAF7] px-4 py-8 animate-in fade-in duration-500">
+    <div className={`min-h-dvh ${pageBg} px-4 py-8 animate-in fade-in duration-500`}>
       <div className="mx-auto w-full max-w-xl">
-        <InviteCard invite={invite}>
-          <Countdown targetIso={invite.date} />
-          <div className="mt-6">
-            {done ? (
-              <ThankYou />
-            ) : (
-              <RSVPForm
-                loading={submitting}
-                onSubmit={async ({ name, status, comment }) => {
-                  setSubmitting(true);
-                  try {
-                    await submitRSVP(slug, { name, status, comment });
-                    localStorage.setItem(localKey(slug), '1');
-                    setDone(true);
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-              />
-            )}
-          </div>
+        <InviteCard
+          invite={invite}
+          invitariumRsvp={
+            invite.template === 'invitarium'
+              ? {
+                  loading: submitting,
+                  done,
+                  thankYou: <ThankYou />,
+                  onSubmit: async ({ name, status, comment }) => {
+                    setSubmitting(true);
+                    try {
+                      await submitRSVP(slug, { name, status, comment });
+                      localStorage.setItem(localKey(slug), '1');
+                      setDone(true);
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  },
+                }
+              : undefined
+          }
+        >
+          {invite.template !== 'invitarium' ? (
+            <>
+              <Countdown targetIso={invite.date} />
+              <div className="mt-6">
+                {done ? (
+                  <ThankYou />
+                ) : (
+                  <RSVPForm
+                    loading={submitting}
+                    onSubmit={async ({ name, status, comment }) => {
+                      setSubmitting(true);
+                      try {
+                        await submitRSVP(slug, { name, status, comment });
+                        localStorage.setItem(localKey(slug), '1');
+                        setDone(true);
+                      } finally {
+                        setSubmitting(false);
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            </>
+          ) : null}
         </InviteCard>
       </div>
     </div>

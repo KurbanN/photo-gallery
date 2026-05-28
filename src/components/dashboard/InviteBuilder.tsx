@@ -1,5 +1,6 @@
 import InviteCard from '@/components/invite/InviteCard';
 import Countdown from '@/components/invite/Countdown';
+import { INVITARIUM_DEFAULT } from '@/components/invite/templates/invitarium/config';
 import type { InviteData, InviteTemplate } from '@/lib/invite-api';
 
 type InviteDraft = {
@@ -104,21 +105,32 @@ export default function InviteBuilder({
           className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
           placeholder="Цитата (напр. С этого дня — навсегда.)"
         />
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setDraft({ ...draft, template: 'classic' })}
-            className={`rounded-full px-3 py-1 text-xs ${draft.template === 'classic' ? 'bg-ink text-paper' : 'border border-line'}`}
-          >
-            Classic
-          </button>
-          <button
-            type="button"
-            onClick={() => setDraft({ ...draft, template: 'dark' })}
-            className={`rounded-full px-3 py-1 text-xs ${draft.template === 'dark' ? 'bg-ink text-paper' : 'border border-line'}`}
-          >
-            Dark
-          </button>
+        <div className="flex flex-wrap gap-2">
+          {(['classic', 'dark', 'invitarium'] as InviteTemplate[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => {
+                if (t !== 'invitarium') {
+                  setDraft({ ...draft, template: t });
+                  return;
+                }
+                setDraft({
+                  ...draft,
+                  template: t,
+                  label: draft.label === 'Wedding Day' || !draft.label.trim() ? INVITARIUM_DEFAULT.label : draft.label,
+                  title: draft.title.trim() ? draft.title : INVITARIUM_DEFAULT.title,
+                  message: draft.message.trim() ? draft.message : INVITARIUM_DEFAULT.message,
+                  quote: draft.quote.trim() ? draft.quote : INVITARIUM_DEFAULT.quote,
+                  venueName: draft.venueName.trim() ? draft.venueName : INVITARIUM_DEFAULT.venueName,
+                  location: draft.location.trim() ? draft.location : INVITARIUM_DEFAULT.location,
+                });
+              }}
+              className={`rounded-full px-3 py-1 text-xs ${draft.template === t ? 'bg-ink text-paper' : 'border border-line'}`}
+            >
+              {t === 'invitarium' ? 'Invitarium' : t === 'dark' ? 'Dark' : 'Classic'}
+            </button>
+          ))}
         </div>
         <button
           type="button"
@@ -136,8 +148,23 @@ export default function InviteBuilder({
         </div>
         <div>
           <p className="mb-2 text-xs uppercase tracking-[0.14em] text-muted">Живое превью</p>
-          <InviteCard invite={previewInvite}>
-            <Countdown targetIso={previewInvite.date} />
+          <InviteCard
+            invite={previewInvite}
+            invitariumRsvp={
+              previewInvite.template === 'invitarium'
+                ? {
+                    loading: false,
+                    done: false,
+                    onSubmit: async () => {
+                      window.alert('Это превью. RSVP сохраняется на опубликованном invite.');
+                    },
+                  }
+                : undefined
+            }
+          >
+            {previewInvite.template !== 'invitarium' ? (
+              <Countdown targetIso={previewInvite.date} />
+            ) : null}
           </InviteCard>
         </div>
       </div>

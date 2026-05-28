@@ -80,7 +80,7 @@ export function inviteRouter(): Router {
       const body = req.body as {
         title?: string;
         startsAt?: string | null;
-        template?: 'classic' | 'dark';
+        template?: 'classic' | 'dark' | 'invitarium';
         label?: string;
         quote?: string;
         venueName?: string;
@@ -92,7 +92,8 @@ export function inviteRouter(): Router {
       const invite = await upsertInviteSettings(event.id, org.id, {
         title: body.title?.trim() || event.title,
         startsAt: body.startsAt ?? event.starts_at,
-        template: body.template === 'dark' ? 'dark' : 'classic',
+        template:
+          body.template === 'dark' ? 'dark' : body.template === 'invitarium' ? 'invitarium' : 'classic',
         label: body.label ?? ((event.settings || {}).inviteLabel as string) ?? 'Wedding Day',
         quote: body.quote ?? ((event.settings || {}).inviteQuote as string) ?? 'С этого дня — навсегда.',
         venueName: body.venueName ?? ((event.settings || {}).inviteVenueName as string) ?? '',

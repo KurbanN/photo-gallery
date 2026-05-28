@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/client';
 import { parseApiJson } from '@/lib/http';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-export type InviteTemplate = 'classic' | 'dark';
+export type InviteTemplate = 'classic' | 'dark' | 'invitarium';
 export type RSVPStatus = 'attending' | 'maybe' | 'declined';
 
 export type InviteData = {

@@ -1,0 +1,143 @@
+    <!DOCTYPE html>
+<html lang="en">
+
+
+<!-- Mirrored from invitarium.io/t/6e950298a33c648472 by HTTrack Website Copier/3.x [XR&CO'2014], Thu, 28 May 2026 22:16:49 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="6e950298a33c648472.html">
+    <meta property="og:title" content="Invitarium">
+    <meta property="og:description"
+        content="Digital Invitation Platform">
+    <meta property="og:image" content="../images/default-og-image.html">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="6e950298a33c648472.html">
+    <meta name="twitter:title" content="Invitarium">
+    <meta name="twitter:description"
+        content="Digital Invitation Platform">
+    <meta name="twitter:image" content="../images/default-og-image.html">
+
+
+
+    <link rel="icon" type="image/png" href="/invite-assets/invitarium/build/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/invite-assets/invitarium/build/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/invite-assets/invitarium/build/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/invite-assets/invitarium/build/favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Invitarium" />
+    <link rel="manifest" href="/invite-assets/invitarium/build/favicon/site.webmanifest" />
+
+
+    <link href="https://invitarium.io/oembed?url=https://invitarium.io/t/6e950298a33c648472&amp;format=json" title="title" rel="alternate"
+        type="application/json+oembed">
+    <link href="https://invitarium.io/oembed?url=https://invitarium.io/t/6e950298a33c648472&amp;format=xml" title="title" rel="alternate"
+        type="text/xml+oembed">
+
+    <meta itemprop="url" content="6e950298a33c648472.html">
+    <meta itemprop="embedURL" content="6e950298a33c648472.html">
+
+                <link rel="preload" as="style" href="/invite-assets/invitarium/build/assets/css/countdown.css" /><link rel="preload" as="style" href="/invite-assets/invitarium/build/assets/css/pages.css" /><link rel="stylesheet" href="/invite-assets/invitarium/build/assets/css/countdown.css" data-navigate-track="reload" /><link rel="stylesheet" href="/invite-assets/invitarium/build/assets/css/pages.css" data-navigate-track="reload" />            <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&amp;display=swap" rel="stylesheet">
+
+    <style>
+        .countdown * {
+            font-family: "Cinzel", serif; font-weight: 400;;
+        }
+
+        .countdown-unit,
+        .countdown-separator {
+            color: #404040;
+        }
+
+        .countdown-unit--last,
+        .countdown-separator:nth-last-child(2) {
+            color: #9F998E;
+        }
+    </style>
+            <style>
+            .template {
+                margin-top: 0;
+                margin-bottom: 0;
+                align-items: center;
+            }
+        </style>
+    </head>
+
+<body>
+    <div class="template">
+        <div class="template__centred">
+                <div class="countdown" id="countdown">
+        <div class="countdown-unit" data-unit="years">
+            <div class="countdown-value">00</div>
+            <div class="countdown-label">Years</div>
+        </div>
+
+        <div class="countdown-separator">:</div>
+        <div class="countdown-unit" data-unit="months">
+            <div class="countdown-value">00</div>
+            <div class="countdown-label">Months</div>
+        </div>
+        <div class="countdown-separator">:</div>
+        <div class="countdown-unit" data-unit="weeks">
+            <div class="countdown-value">00</div>
+            <div class="countdown-label">Weeks</div>
+        </div>
+        <div class="countdown-separator">:</div>
+        <div class="countdown-unit" data-unit="days">
+            <div class="countdown-value">00</div>
+            <div class="countdown-label">Days</div>
+        </div>
+        <div class="countdown-separator">:</div>
+        <div class="countdown-unit" data-unit="hours">
+            <div class="countdown-value">00</div>
+            <div class="countdown-label">Hours</div>
+        </div>
+        <div class="countdown-separator">:</div>
+        <div class="countdown-unit" data-unit="minutes">
+            <div class="countdown-value">00</div>
+            <div class="countdown-label">Minutes</div>
+        </div>
+        <div class="countdown-separator">:</div>
+        <div class="countdown-unit countdown-unit--last" data-unit="seconds">
+            <div class="countdown-value">00</div>
+            <div class="countdown-label">Seconds</div>
+        </div>
+    </div>
+        </div>
+    </div>
+               
+    <script src="/invite-assets/invitarium/build/js/timerInline.js"></script>
+    <script src="/invite-assets/invitarium/luxon.min.js"></script>
+    <script>
+        function updateTimer() {
+            const {
+                DateTime
+            } = luxon; // берём из глобального объекта luxon
+            const timerElement = document.getElementById('countdown');
+
+            const params = new URLSearchParams(window.location.search);
+            const dateString = params.get('date') || '2026-08-02';
+            const timezone = "UTC";
+
+            const targetDate = DateTime.fromSQL(dateString, {
+                zone: timezone
+            }).toJSDate();
+
+            const timer = new Timer(timerElement);
+            timer.setUnits(["days","hours","minutes","seconds"]);
+            timer.setEndDate(targetDate);
+        }
+        document.addEventListener('DOMContentLoaded', updateTimer);
+    </script>
+</body>
+
+
+<!-- Mirrored from invitarium.io/t/6e950298a33c648472 by HTTrack Website Copier/3.x [XR&CO'2014], Thu, 28 May 2026 22:16:54 GMT -->
+</html>

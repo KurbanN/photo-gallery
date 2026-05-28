@@ -2,7 +2,7 @@ import { getSupabase } from './supabase.js';
 import { getEventById, getEventBySlug, updateEvent } from './events-db.js';
 import type { EventRow } from './types.js';
 
-export type InviteTemplate = 'classic' | 'dark';
+export type InviteTemplate = 'classic' | 'dark' | 'invitarium';
 export type RSVPStatus = 'attending' | 'maybe' | 'declined';
 
 export type InvitePublic = {
@@ -31,7 +31,9 @@ export type RSVPRow = {
 
 function readInviteFromEvent(event: EventRow): InvitePublic {
   const settings = event.settings || {};
-  const template = settings.inviteTemplate === 'dark' ? 'dark' : 'classic';
+  const raw = settings.inviteTemplate;
+  const template: InviteTemplate =
+    raw === 'dark' ? 'dark' : raw === 'invitarium' ? 'invitarium' : 'classic';
   return {
     eventId: event.id,
     slug: event.slug,

@@ -64,8 +64,10 @@ export function createApp() {
         : 'Дата уточняется';
       const title = escapeHtml(invite.title.slice(0, 72));
       const location = escapeHtml((invite.location || 'Allmemories').slice(0, 72));
-      const bg = invite.template === 'dark' ? '#1A1814' : '#FAFAF7';
-      const fg = invite.template === 'dark' ? '#F5F3EE' : '#2C2C2A';
+      const bg =
+        invite.template === 'dark' ? '#1A1814' : invite.template === 'invitarium' ? '#F8F8F7' : '#FAFAF7';
+      const fg =
+        invite.template === 'dark' ? '#F5F3EE' : invite.template === 'invitarium' ? '#404040' : '#2C2C2A';
       const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
   <rect width="1200" height="630" fill="${bg}"/>

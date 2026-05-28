@@ -1,0 +1,194 @@
+/* Область действия: только шаблон Invitarium */
+.invitarium-invite {
+  background-color: #f8f8f7;
+  color: #404040;
+}
+
+.invitarium-invite .template {
+  margin-top: 0;
+  margin-bottom: 0;
+  min-height: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.invitarium-invite .template__centred {
+  max-width: 430px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.invitarium-invite .footer {
+  display: none;
+}
+
+.invitarium-invite .m12-hero {
+  width: 100%;
+  aspect-ratio: 430 / 520;
+  overflow: hidden;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.invitarium-invite .m12-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.invitarium-invite .m12-names {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.invitarium-invite .m12-name {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: clamp(1.75rem, 8vw, 2.25rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #000;
+  line-height: 1.15;
+}
+
+.invitarium-invite .m12-date {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: clamp(2rem, 9vw, 2.75rem);
+  color: #000;
+  margin: 0.35em 0;
+}
+
+.invitarium-invite .m12-block {
+  margin-bottom: 16px;
+}
+
+.invitarium-invite .m12-text {
+  text-align: center;
+  font-family: 'Mulish', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
+.invitarium-invite .m12-section-title {
+  display: block;
+  text-align: center;
+  font-family: 'Mulish', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: #000;
+  margin-bottom: 12px;
+}
+
+.invitarium-invite .m12-map {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: 'Josefin Sans', sans-serif;
+  font-weight: 300;
+  color: #404040;
+  text-decoration: underline;
+}
+
+.invitarium-invite .m12-countdown-heading {
+  text-align: center;
+  font-family: 'Mulish', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  margin: 8px 0 16px;
+}
+
+/* Тема формы — из eb5daa0293f020daa2.html */
+.invitarium-invite {
+  --bool-icon-color: #d1cdc4;
+  --yes-icon-active-color: #47bf7c;
+  --no-icon-active-color: #ce6666;
+}
+
+.invitarium-invite .bool-icon-path {
+  fill: var(--bool-icon-color) !important;
+}
+
+.invitarium-invite .bool:has(.bool__input:not(:checked)):hover .bool__icon.heart .bool-icon-path {
+  fill: var(--yes-icon-active-color) !important;
+  opacity: 0.4;
+}
+
+.invitarium-invite .bool:has(.bool__input:checked) .bool__icon.heart .bool-icon-path {
+  fill: var(--yes-icon-active-color) !important;
+}
+
+.invitarium-invite .bool:has(.bool__input:not(:checked)):hover .bool__icon.cross .bool-icon-path {
+  fill: var(--no-icon-active-color) !important;
+  opacity: 0.4;
+}
+
+.invitarium-invite .bool:has(.bool__input:checked) .bool__icon.cross .bool-icon-path {
+  fill: var(--no-icon-active-color) !important;
+}
+
+.invitarium-invite .form_question,
+.invitarium-invite .form_question * {
+  font-family: 'Roboto', sans-serif !important;
+  font-weight: 300 !important;
+  font-size: 16px !important;
+  color: #404040 !important;
+}
+
+.invitarium-invite .form_response,
+.invitarium-invite .form_response * {
+  font-family: 'Roboto', sans-serif !important;
+  font-weight: 300 !important;
+  font-size: 16px !important;
+  color: #404040 !important;
+}
+
+.invitarium-invite .card_form {
+  background-color: #f8f8f7 !important;
+  border-color: #d1cdc4 !important;
+  border-width: 1px !important;
+  border-radius: 10px !important;
+  margin-bottom: 12px;
+}
+
+.invitarium-invite .sand__submit,
+.invitarium-invite .form-submit-btn {
+  font-family: 'Josefin Sans', sans-serif !important;
+  font-weight: 300 !important;
+  font-size: 16px !important;
+  background: #f8f8f7 !important;
+  color: #404040 !important;
+  min-width: 150px !important;
+  padding-left: 22px !important;
+  padding-right: 22px !important;
+  height: 35px !important;
+  border-radius: 30px !important;
+  border: 1px solid #d1cdc4 !important;
+  cursor: pointer;
+}
+
+.invitarium-invite .card_form__input,
+.invitarium-invite textarea.card_form__input {
+  background-color: transparent !important;
+  border-bottom-color: rgba(209, 205, 196, 0.5) !important;
+}
+
+.invitarium-invite .card_form__input:focus,
+.invitarium-invite textarea.card_form__input:focus {
+  border-bottom-width: 2px !important;
+  border-bottom-color: rgba(209, 205, 196, 1) !important;
+}
+
+.invitarium-invite .countdown * {
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
+}
+
+.invitarium-invite .countdown-unit,
+.invitarium-invite .countdown-separator {
+  color: #404040;
+}
+
+.invitarium-invite .countdown-unit--last,
+.invitarium-invite .countdown-separator:nth-last-child(2) {
+  color: #9f998e;
+}

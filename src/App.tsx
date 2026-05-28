@@ -8,6 +8,7 @@ import EventManage from '@/pages/EventManage';
 import AdminUsers from '@/pages/AdminUsers';
 import InvitePublic from '@/pages/InvitePublic';
 import EventInviteManage from '@/pages/EventInviteManage';
+import InviteInvitariumPreview from '@/pages/InviteInvitariumPreview';
 
 export default function App() {
   const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/dashboard/events/:id/invite" element={<EventInviteManage />} />
         <Route path="/dashboard/admin" element={<AdminUsers />} />
         <Route path="/invite/:slug" element={<InvitePublic />} />
+        <Route path="/preview/invitarium" element={<InviteInvitariumPreview />} />
         {/* Старые закладки: одностраничная свадьба → legacy slug */}
         <Route path="/wedding" element={<Navigate to="/e/demo" replace />} />
         <Route path="/e/main" element={<Navigate to="/e/demo" replace />} />

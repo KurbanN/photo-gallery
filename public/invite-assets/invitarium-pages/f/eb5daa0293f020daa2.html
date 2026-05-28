@@ -1,0 +1,769 @@
+    <!DOCTYPE html>
+<html lang="en">
+
+
+<!-- Mirrored from invitarium.io/f/eb5daa0293f020daa2 by HTTrack Website Copier/3.x [XR&CO'2014], Thu, 28 May 2026 22:16:54 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="eb5daa0293f020daa2.html">
+    <meta property="og:title" content="Invitarium">
+    <meta property="og:description"
+        content="Digital Invitation Platform">
+    <meta property="og:image" content="../images/default-og-image.html">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="eb5daa0293f020daa2.html">
+    <meta name="twitter:title" content="Invitarium">
+    <meta name="twitter:description"
+        content="Digital Invitation Platform">
+    <meta name="twitter:image" content="../images/default-og-image.html">
+
+
+
+    <link rel="icon" type="image/png" href="/invite-assets/invitarium/build/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/invite-assets/invitarium/build/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/invite-assets/invitarium/build/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/invite-assets/invitarium/build/favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Invitarium" />
+    <link rel="manifest" href="/invite-assets/invitarium/build/favicon/site.webmanifest" />
+
+
+    <link href="https://invitarium.io/oembed?url=https://invitarium.io/f/eb5daa0293f020daa2&amp;format=json" title="title" rel="alternate"
+        type="application/json+oembed">
+    <link href="https://invitarium.io/oembed?url=https://invitarium.io/f/eb5daa0293f020daa2&amp;format=xml" title="title" rel="alternate"
+        type="text/xml+oembed">
+
+    <meta itemprop="url" content="eb5daa0293f020daa2.html">
+    <meta itemprop="embedURL" content="eb5daa0293f020daa2.html">
+
+                <link rel="preload" as="style" href="/invite-assets/invitarium/build/assets/css/form.css" /><link rel="preload" as="style" href="/invite-assets/invitarium/build/assets/css/pages.css" /><link rel="preload" as="style" href="/invite-assets/invitarium/build/assets/css/app.css" /><link rel="preload" as="style" href="/invite-assets/invitarium/build/assets/css/index.css" /><link rel="preload" as="style" href="/invite-assets/invitarium/build/assets/css/countdown.css" /><link rel="preload" as="style" href="/invite-assets/invitarium/build/assets/css/login.css" /><link rel="preload" as="style" href="/invite-assets/invitarium/build/assets/css/map.css" /><link rel="modulepreload" as="script" href="/invite-assets/invitarium/build/assets/js/app.js" /><link rel="modulepreload" as="script" href="/invite-assets/invitarium/build/assets/js/timer.js" /><link rel="stylesheet" href="/invite-assets/invitarium/build/assets/css/form.css" data-navigate-track="reload" /><link rel="stylesheet" href="/invite-assets/invitarium/build/assets/css/pages.css" data-navigate-track="reload" /><link rel="stylesheet" href="/invite-assets/invitarium/build/assets/css/app.css" data-navigate-track="reload" /><link rel="stylesheet" href="/invite-assets/invitarium/build/assets/css/index.css" data-navigate-track="reload" /><link rel="stylesheet" href="/invite-assets/invitarium/build/assets/css/countdown.css" data-navigate-track="reload" /><link rel="stylesheet" href="/invite-assets/invitarium/build/assets/css/login.css" data-navigate-track="reload" /><link rel="stylesheet" href="/invite-assets/invitarium/build/assets/css/map.css" data-navigate-track="reload" /><script type="module" src="/invite-assets/invitarium/build/assets/js/app.js" data-navigate-track="reload"></script>                    <link rel="preconnect" href="https://fonts.googleapis.com/">
+        <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&amp;family=Mulish:ital,wght@0,200..1000;1,200..1000&amp;family=Roboto:ital,wght@0,100..900;1,100..900&amp;family=Roboto:ital,wght@0,100..900;1,100..900&amp;family=Josefin+Sans:ital,wght@0,100..700;1,100..700&amp;display=swap" rel="stylesheet">
+    
+    
+    <style>
+        :root {
+            --bool-icon-color: #D1CDC4;
+            --yes-icon-active-color: #47BF7C;
+            --no-icon-active-color: #CE6666;
+        }
+
+        .bool-icon-path {
+            fill: var(--bool-icon-color) !important;
+        }
+
+        /* YES icon hover state - 40% opacity of active color */
+        .bool:has(.bool__input:not(:checked)):hover .bool__icon.heart .bool-icon-path {
+            fill: var(--yes-icon-active-color) !important;
+            opacity: 0.4;
+        }
+
+        /* YES icon checked/active state */
+        .bool:has(.bool__input:checked) .bool__icon.heart .bool-icon-path {
+            fill: var(--yes-icon-active-color) !important;
+        }
+
+        /* NO icon hover state - 40% opacity of active color */
+        .bool:has(.bool__input:not(:checked)):hover .bool__icon.cross .bool-icon-path {
+            fill: var(--no-icon-active-color) !important;
+            opacity: 0.4;
+        }
+
+        /* NO icon checked/active state */
+        .bool:has(.bool__input:checked) .bool__icon.cross .bool-icon-path {
+            fill: var(--no-icon-active-color) !important;
+        }
+
+        .form_question,
+        .form_question * {
+            font-family: "Roboto", sans-serif; font-weight: 300;
+            font-size: 16px !important;
+            color: #404040 !important;
+        }
+        .form_response,
+        .form_response * {
+            font-family: "Roboto", sans-serif; font-weight: 300;
+            font-size: 16px !important;
+            color: #404040 !important;
+        }
+        .form_response::placeholder {
+            font-family: "Roboto", sans-serif; font-weight: 300;
+            font-size: 16px !important;
+            color: #404040 !important;
+            opacity: 0.4 !important;
+        }
+
+                body {
+            background-color: transparent !important;
+        }
+
+        .template__card--content,
+        .template__centred {
+            background-color: transparent !important;
+        }
+        
+        .card_form {
+            background-color: #F8F8F7 !important;
+            border-color: #D1CDC4 !important;
+            border-width: 1px !important;
+            border-radius: 10px !important;
+        }
+
+        .form-header {
+            font-family: "Mulish", sans-serif; font-weight: 700;
+            font-size: 36px !important;
+            color: #000000 !important;
+            margin: 0;
+            padding: 0;
+        }
+
+        .form-description {
+            font-family: "Mulish", sans-serif; font-weight: 400;
+            font-size: 18px !important;
+            color: #000000 !important;
+            margin: 0;
+            padding: 0;
+        }
+
+        .form__response-success div {
+             font-family: "Josefin Sans", sans-serif; font-weight: 300;
+            font-size: 16px !important;
+            color: #F8F8F7 !important;
+        }
+
+        .sand__submit,
+        .form-submit-btn {
+             font-family: "Josefin Sans", sans-serif; font-weight: 300;
+            font-size: 16px !important;
+            background: #F8F8F7 !important;
+            color: #404040 !important;
+            min-width: 150px !important;
+            padding-left: 22px !important;
+            padding-right: 22px !important;
+            height: 35px !important;
+            border-radius: 30px !important;
+            border: 1px solid #D1CDC4 !important;
+        }
+        .card_form__error {
+            display: flex;
+            align-items: flex-start;
+            margin-top: 8px;
+            color: #F44336;
+            font-size: 12px;
+        }
+        .card_form__error svg {
+            margin-right: 6px;
+            min-width: 16px;
+            margin-top: 2px;
+        }
+        .card_form__error p {
+            margin: 3px 0;
+        }
+        .card_form__input.error,
+        textarea.error {
+            border-color: #F44336;
+        }
+
+        /* Input fields - transparent background */
+        .card_form__input,
+        textarea.card_form__input {
+            background-color: transparent !important;
+        }
+
+        /* Bottom border styling for input fields - Border color 50% opacity */
+        .card_form__input,
+        textarea.card_form__input {
+            border-bottom-color: rgba(209, 205, 196, 0.5) !important;
+        }
+
+        /* Bottom border on focus - 2px width and Border color 100% opacity */
+        .card_form__input:focus,
+        textarea.card_form__input:focus {
+            border-bottom-width: 2px !important;
+            border-bottom-color: rgba(209, 205, 196, 1) !important;
+        }
+
+        /* Placeholder opacity for input fields - 40% */
+        .card_form__input::placeholder,
+        textarea.card_form__input::placeholder {
+            opacity: 0.4 !important;
+        }
+
+        /* Dropdown selector background - Frame color, Response text color border */
+        .custom-select.empty .custom-select__selected {
+            background-color: #F8F8F7 !important;
+            border: 1.5px solid #404040 !important;
+        }
+
+        /* Dropdown arrow color from Response text color */
+        .custom-select__arrow {
+            border-right-color: #404040 !important;
+            border-bottom-color: #404040 !important;
+        }
+
+        /* Dropdown options list background from Frame color */
+        .custom-select__options {
+            background-color: #F8F8F7 !important;
+            box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.3) !important;
+        }
+
+        /* Dropdown option text - 100% opacity */
+        .custom-select__option {
+            opacity: 1 !important;
+        }
+
+        /* Dropdown option on hover - 20% Response text color background */
+        .custom-select__option:hover {
+            background-color: rgba(64, 64, 64, 0.2) !important;
+        }
+
+        /* Radio buttons and checkboxes - Response text color */
+        .card_form__radio input[type="radio"],
+        .card_form__radio input[type="checkbox"] {
+            border-color: #404040 !important;
+        }
+
+        /* Radio button checked - Response text color for dot */
+        .card_form__radio input[type="radio"]:checked {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23404040'/%3e%3c/svg%3e") !important;
+        }
+
+        /* Checkbox checked - Response text color for background and border, Frame color for checkmark */
+        .card_form__radio input[type="checkbox"]:checked {
+            background-color: #404040 !important;
+            border-color: #404040 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3cpath d='M4 12l5 5L20 6' stroke='%23F8F8F7' stroke-width='2' fill='none'/%3e%3c/svg%3e") !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="template">
+        <div class="template__centred">
+                <div id="responseFormWrapper" data-submit-url="/api/invite-rsvp-bridge" data-submitting-text="Sending..."
+        data-success-message="Form successfully sent" data-error-message="Form submission error"
+        data-validation-error="Validation error"
+        data-invalid-json-response="Server returned invalid data format">
+
+        <form class="form" id="responseForm">
+            <div class="form__body">
+                
+                
+                
+                
+                                    <div class="card_form" data-fild-id="5380" style="background-color: #F8F8F7">
+    <div class="card_form__caption form_question">
+        Ваше имя
+                    <span>*</span>
+            </div>
+    <div class="card_form__answer form_response">
+        <input type="text" class="card_form__input form_response" data-field-id="5380" placeholder="Enter your name">
+    </div>
+    <div class="card_form__error ">
+        <svg>
+            <use href="/invite-assets/invitarium/build/images/svg/sprite.svg#icon--info"></use>
+        </svg>
+        <p class="form_response"></p>
+    </div>
+</div>
+                                    <div class="card_form" data-fild-id="5379" style="background-color: #F8F8F7">
+    
+    <div class="card_form__caption form_question">
+        Вы придете?
+                    <span>*</span>
+            </div>
+    <div class="card_form__bool">
+        <label class="bool">
+            <input class="bool__input" type="radio" name="field_5379" data-field-id="5379"
+                value="да " id="yes">
+            <div class="bool__icon heart">
+                <div class="bool__icon_inner">
+                    <div class="bool__icon_svg">
+
+                                                    <svg width="59" height="50" viewBox="0 0 47 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M23.5 40C23.2622 40 23.0246 39.9396 22.8116 39.8185C22.5803 39.6872 17.0843 36.5471 11.5095 31.8157C8.20538 29.0115 5.56788 26.2302 3.67045 23.5492C1.21507 20.0799 -0.0196826 16.7429 0.00023721 13.6307C0.0235535 10.0093 1.34166 6.6036 3.71203 4.04089C6.12242 1.43501 9.33916 0 12.7699 0C17.1667 0 21.1865 2.4236 23.5001 6.26287C25.8136 2.42369 29.8335 0 34.2303 0C37.4714 0 40.5638 1.29481 42.938 3.64596C45.5435 6.2261 47.0239 9.87171 46.9997 13.6478C46.9797 16.7546 45.7218 20.0866 43.261 23.5511C41.3577 26.2308 38.7239 29.0108 35.4327 31.8142C29.8783 36.5451 24.4218 39.6851 24.1922 39.8164C23.9782 39.9388 23.739 40 23.5 40Z"/>
+                            </svg>
+                                            </div>
+                </div>
+            </div>
+            <span class="bool__text form_response">
+                да 
+            </span>
+        </label>
+    </div>
+    <div class="card_form__bool">
+        <label class="bool">
+            <input class="bool__input" type="radio" name="field_5379"
+                data-field-id="5379" value="нет "
+                id="no">
+            <div class="bool__icon cross">
+                <div class="bool__icon_inner">
+                    <div class="bool__icon_svg">
+                                                    <svg width="50" height="50" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M39.1517 7.85205L32.1525 0.852845C31.0214 -0.278249 29.189 -0.278249 28.0579 0.852845L20 8.91076L11.9421 0.84832C10.811 -0.282773 8.97862 -0.282773 7.84753 0.84832L0.84832 7.85205C-0.282773 8.98315 -0.282773 10.8155 0.84832 11.9466L8.90623 20.0045L0.84832 28.0579C-0.282773 29.189 -0.282773 31.0214 0.84832 32.1525L7.84753 39.1517C8.97862 40.2828 10.811 40.2828 11.9421 39.1517L20 31.0938L28.0579 39.1517C29.189 40.2828 31.0214 40.2828 32.1525 39.1517L39.1517 32.1525C40.2828 31.0214 40.2828 29.189 39.1517 28.0579L31.0938 20L39.1517 11.9421C40.2828 10.811 40.2828 8.97862 39.1517 7.84753V7.85205Z"/>
+                            </svg>
+                                            </div>
+                </div>
+            </div>
+            <span class="bool__text form_response">
+                нет 
+            </span>
+        </label>
+    </div>
+    <div class="card_form__error form_response">
+        <svg>
+            <use href="/invite-assets/invitarium/build/images/svg/sprite.svg#icon--info"></use>
+        </svg>
+        <p></p>
+    </div>
+</div>
+                                    <div class="card_form" data-fild-id="5381" style="background-color: #F8F8F7">
+    <div class="card_form__caption form_question">
+        Вам нужен трансфер?
+                    <span>*</span>
+            </div>
+    <div class="card_form__answer form_response">
+                                                        <div class="card_form__radio">
+                        <input type="radio" name="field_5381" data-field-id="5381"
+                            value="да" id="option-5381-0">
+                        <label for="option-5381-0">да</label>
+                    </div>
+                                                                <div class="card_form__radio">
+                        <input type="radio" name="field_5381" data-field-id="5381"
+                            value="нет" id="option-5381-1">
+                        <label for="option-5381-1">нет</label>
+                    </div>
+                                        </div>
+    <div class="card_form__error">
+        <svg>
+            <use href="/invite-assets/invitarium/build/images/svg/sprite.svg#icon--info"></use>
+        </svg>
+        <p class="form_response"></p>
+    </div>
+</div>
+                            </div>
+            <div class="edit__row">
+
+                <div class="edit__center ">
+                    <div class=" form__response">
+                        <button type="submit" class="sand__submit">Submit</button>
+                    </div>
+
+                    <div class="edit__line form__response-success">
+                        <div>Your response has been recorded</div>
+                        
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </div>
+        </div>
+    </div>
+                <script>
+        // Wait for both DOM and Alpine to be ready
+        function initForm() {
+            const wrapper = document.getElementById('responseFormWrapper');
+            const form = document.getElementById('responseForm');
+
+            if (!form) return;
+
+            const editButton = document.querySelector('.edit__submit');
+            if (editButton) {
+                editButton.addEventListener('click', () => {
+                    form.classList.remove('form--success');
+                });
+            }
+
+            const messages = {
+                submitting: wrapper.dataset.submittingText,
+                success: wrapper.dataset.successMessage,
+                error: wrapper.dataset.errorMessage,
+                validation: wrapper.dataset.validationError,
+                invalidJson: wrapper.dataset.invalidJsonResponse,
+            };
+
+            // Helper function to show alerts
+            function showAlert(type, message) {
+                try {
+                    if (window.Alpine && window.Alpine.store) {
+                        window.Alpine.store('alerts').add(type, message);
+                    } else {
+                        console.warn('Alpine alerts store not available:', message);
+                    }
+                } catch (error) {
+                    console.error('Error showing alert:', error, message);
+                }
+            }
+
+            // --- Кастомные селекты ---
+            document.querySelectorAll('.card_form__other').forEach(parent => {
+                const controlInput = parent.querySelector('.card_form__radio input');
+                const textInput = parent.querySelector('.card_form__input');
+                if (controlInput && textInput) {
+                    // Существующий обработчик для checkbox/radio
+                    controlInput.addEventListener('change', e => {
+                        if (controlInput.checked) {
+                            textInput.focus();
+                        }
+                    });
+
+                    // Новый обработчик для поля ввода
+                    textInput.addEventListener('input', e => {
+                        if (textInput.value.trim() !== '') {
+                            controlInput.checked = true;
+                        }
+                    });
+                }
+            });
+
+            document.querySelectorAll('.custom-select').forEach(select => {
+                const selected = select.querySelector('.custom-select__selected');
+                const selectedLabel = select.querySelector('.custom-select__label');
+                const options = select.querySelector('.custom-select__options');
+                const hiddenInput = select.querySelector('input[type="hidden"]');
+                const optionElements = options.querySelectorAll('.custom-select__option');
+                const placeholder = select.dataset.placeholder || 'Выберите...';
+                let activeIndex = -1;
+
+                if (hiddenInput.value === 'Choose an option' || !hiddenInput.value) {
+                    select.classList.add('empty');
+                    selectedLabel.textContent = placeholder;
+                } else {
+                    select.classList.remove('empty');
+                }
+
+                const open = () => {
+                    const rect = select.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const spaceAbove = rect.top;
+                    if (spaceBelow < 200 && spaceAbove > 200) {
+                        select.classList.add('drop-up');
+                    } else {
+                        select.classList.remove('drop-up');
+                    }
+                    select.classList.add('open');
+                };
+
+                const close = () => {
+                    select.classList.remove('open');
+                    select.classList.remove('drop-up');
+                    activeIndex = -1;
+                    updateActive();
+                };
+
+                const toggle = () => {
+                    if (select.classList.contains('open')) {
+                        close();
+                    } else {
+                        open();
+                    }
+                };
+
+                const updateActive = () => {
+                    optionElements.forEach((opt, idx) => {
+                        opt.classList.toggle('active', idx === activeIndex);
+                    });
+                };
+
+                const selectOption = (index) => {
+                    if (index >= 0 && index < optionElements.length) {
+                        const option = optionElements[index];
+                        const value = option.getAttribute('data-value');
+                        const label = option.textContent;
+                        hiddenInput.value = value;
+                        selectedLabel.textContent = label;
+                        optionElements.forEach(opt => opt.classList.remove('active'));
+                        option.classList.add('active');
+                        close();
+                    }
+                };
+
+                selected.addEventListener('click', toggle);
+                optionElements.forEach((option, idx) => {
+                    option.addEventListener('click', () => {
+                        selectOption(idx);
+                    });
+                });
+
+                document.addEventListener('click', e => {
+                    if (!select.contains(e.target)) {
+                        close();
+                    }
+                });
+
+                select.addEventListener('keydown', e => {
+                    const key = e.key;
+                    if (key === 'Enter' || key === ' ') {
+                        e.preventDefault();
+                        if (select.classList.contains('open')) {
+                            selectOption(activeIndex);
+                        } else {
+                            open();
+                        }
+                    }
+                    if (key === 'ArrowDown') {
+                        e.preventDefault();
+                        open();
+                        activeIndex = (activeIndex + 1) % optionElements.length;
+                        updateActive();
+                    }
+                    if (key === 'ArrowUp') {
+                        e.preventDefault();
+                        open();
+                        activeIndex = (activeIndex - 1 + optionElements.length) % optionElements
+                            .length;
+                        updateActive();
+                    }
+                    if (key === 'Escape') {
+                        close();
+                    }
+                });
+
+                selectedLabel.textContent = placeholder;
+            });
+
+            // --- Отправка формы ---
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.textContent;
+                submitButton.textContent = messages.submitting;
+                submitButton.disabled = true;
+                clearFormErrors();
+
+                try {
+                    const data = collectFormData();
+                    const jsonString = JSON.stringify(data);
+
+                    const queryString = `fields=${encodeURIComponent(jsonString)}`;
+                    const url = `${wrapper.dataset.submitUrl}?${queryString}`;
+
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        credentials: 'omit',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error(messages.invalidJson);
+                    }
+
+                    const result = await response.json();
+                    console.log('Response data:', result);
+
+                    if (!response.ok) {
+                        if (response.status === 422 && result.errors) {
+                            displayFormErrors(result.errors);
+                            throw new Error(result.message || messages.validation);
+                        } else {
+                            throw new Error(result.message || messages.error);
+                        }
+                    }
+
+                    showAlert("success", result.message || messages.success);
+                    form.classList.add('form--success');
+
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    showAlert("error", error.message);
+                } finally {
+                    submitButton.textContent = originalButtonText;
+                    submitButton.disabled = false;
+                }
+            });
+
+            // --- Вспомогательные функции ---
+
+            function collectFormData() {
+                const formData = {};
+                form.querySelectorAll('.card_form__input[data-field-id], textarea[data-field-id]').forEach(
+                    input => {
+                        formData[input.dataset.fieldId] = input.value || '';
+                    });
+                form.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+                    if (!radio.dataset.fieldId) return;
+                    if (radio.closest('.card_form__other')) {
+                        const otherInput = radio.closest('.card_form__other').querySelector(
+                            '.card_form__input');
+                        formData[radio.dataset.fieldId] = otherInput ? otherInput.value : 'Other';
+                    } else {
+                        formData[radio.dataset.fieldId] = radio.value;
+                    }
+                });
+                const checkboxFields = new Set();
+                form.querySelectorAll('input[type="checkbox"][data-field-id]').forEach(checkbox => {
+                    checkboxFields.add(checkbox.dataset.fieldId);
+                });
+                checkboxFields.forEach(fieldId => {
+                    formData[fieldId] = [];
+                });
+                form.querySelectorAll('input[type="checkbox"][data-field-id]:checked').forEach(checkbox => {
+                    if (checkbox.closest('.card_form__other')) {
+                        const otherInput = checkbox.closest('.card_form__other').querySelector(
+                            '.card_form__input');
+                        formData[checkbox.dataset.fieldId].push(otherInput ? otherInput.value : 'Other');
+                    } else {
+                        formData[checkbox.dataset.fieldId].push(checkbox.value);
+                    }
+                });
+                form.querySelectorAll('.custom-select input[type="hidden"][data-field-id]').forEach(input => {
+                    const value = input.value;
+                    const placeholder = input.dataset.placeholder;
+                    const fieldContainer = input.closest('.card_form');
+                    const isRequired = fieldContainer.querySelector('.form_question span') !== null;
+
+                    // Пропускаем незаполненные необязательные поля
+                    if (!isRequired && (!value || value === placeholder)) {
+                        return;
+                    }
+
+                    formData[input.dataset.fieldId] = value;
+                });
+                return formData;
+            }
+
+            function clearFormErrors() {
+                form.querySelectorAll('.card_form__error').forEach(errorEl => {
+                    errorEl.remove();
+                });
+                form.querySelectorAll('.card_form__input.error, textarea.error').forEach(input => {
+                    input.classList.remove('error');
+                });
+                form.querySelectorAll('.card_form--error').forEach(formGroup => {
+                    formGroup.classList.remove('card_form--error');
+                });
+            }
+
+            function displayFormErrors(errors) {
+                if (!Array.isArray(errors)) return;
+                errors.forEach(error => {
+                    if (error.field_id && error.message) {
+                        const fieldContainer = findFieldById(error.field_id);
+                        if (fieldContainer) {
+                            fieldContainer.classList.add('card_form--error');
+                            const errorElement = document.createElement('div');
+                            errorElement.className = 'card_form__error';
+                            errorElement.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM7 3h2v6H7V3zm0 8h2v2H7v-2z" fill="#F44336"/>
+                        </svg>
+                        <p>${error.message}</p>
+                    `;
+                            fieldContainer.appendChild(errorElement);
+                            const input = fieldContainer.querySelector('.card_form__input, textarea');
+                            if (input) {
+                                input.classList.add('error');
+                            }
+                        }
+                    }
+                });
+                const firstError = form.querySelector('.card_form__error');
+                if (firstError) {
+                    firstError.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            }
+
+            function findFieldById(fieldId) {
+                const element = form.querySelector(`[data-field-id="${fieldId}"]`);
+                return element ? element.closest('.card_form') : null;
+            }
+
+            // Очистка ошибки для конкретного поля
+            function clearFieldError(fieldContainer) {
+                if (!fieldContainer) return;
+                const errorElement = fieldContainer.querySelector('.card_form__error');
+                if (errorElement) {
+                    errorElement.remove();
+                }
+                fieldContainer.classList.remove('card_form--error');
+                const input = fieldContainer.querySelector('.card_form__input, textarea');
+                if (input) {
+                    input.classList.remove('error');
+                }
+            }
+
+            // Обработчики для очистки ошибок при вводе
+            form.querySelectorAll('.card_form__input, textarea').forEach(input => {
+                input.addEventListener('input', () => {
+                    clearFieldError(input.closest('.card_form'));
+                });
+            });
+
+            // Обработчик для селектов
+            form.querySelectorAll('.custom-select').forEach(select => {
+                const hiddenInput = select.querySelector('input[type="hidden"]');
+                const observer = new MutationObserver(() => {
+                    clearFieldError(select.closest('.card_form'));
+                });
+                observer.observe(hiddenInput, {
+                    attributes: true,
+                    attributeFilter: ['value']
+                });
+            });
+
+            // Обработчики для радиокнопок и чекбоксов
+            form.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+                input.addEventListener('change', () => {
+                    clearFieldError(input.closest('.card_form'));
+                });
+            });
+        }
+
+        // Initialize when both DOM and Alpine are ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                // Wait a bit for Alpine to initialize
+                if (window.Alpine) {
+                    initForm();
+                } else {
+                    setTimeout(initForm, 100);
+                }
+            });
+        } else {
+            // DOM already loaded
+            if (window.Alpine) {
+                initForm();
+            } else {
+                setTimeout(initForm, 100);
+            }
+        }
+    </script>
+
+<script>
+(function () {
+  const wrapper = document.getElementById('responseFormWrapper');
+  const form = document.getElementById('responseForm');
+  if (!wrapper || !form) return;
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const nameInput = form.querySelector('input[data-field-id="5380"]');
+    const yes = form.querySelector('#yes');
+    const no = form.querySelector('#no');
+    const transfer = form.querySelector('input[name="field_5381"]:checked, input[data-field-id="5381"]:checked');
+    const name = (nameInput && nameInput.value || '').trim();
+    let status = 'maybe';
+    if (yes && yes.checked) status = 'attending';
+    else if (no && no.checked) status = 'declined';
+    const comment = transfer ? String(transfer.value || '').trim() : '';
+    window.top.postMessage({ type: 'invitarium-rsvp', payload: { name, status, comment } }, '*');
+  }, true);
+})();
+</script></body>
+
+
+<!-- Mirrored from invitarium.io/f/eb5daa0293f020daa2 by HTTrack Website Copier/3.x [XR&CO'2014], Thu, 28 May 2026 22:16:58 GMT -->
+</html>

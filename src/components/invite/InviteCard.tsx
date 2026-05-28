@@ -1,7 +1,8 @@
 import type { InviteData } from '@/lib/invite-api';
 import type { ReactNode } from 'react';
+import InvitariumTemplate, { type InvitariumRsvpProps } from './templates/InvitariumTemplate';
 
-export default function InviteCard({ invite, children }: { invite: InviteData; children?: ReactNode }) {
+function ClassicInviteCard({ invite, children }: { invite: InviteData; children?: ReactNode }) {
   const dark = invite.template === 'dark';
   const container = dark
     ? 'bg-[#1A1814] text-[#F5F3EE] border-[#3b3428]'
@@ -16,7 +17,7 @@ export default function InviteCard({ invite, children }: { invite: InviteData; c
     : '';
 
   return (
-    <section className={`w-full rounded-2xl border p-6 shadow-sm sm:p-8 ${container} animate-in fade-in duration-500`}>
+    <section className={`invite-card w-full rounded-2xl border p-6 shadow-sm sm:p-8 ${container} animate-in fade-in duration-500`}>
       <p className="text-center text-xs uppercase tracking-[0.28em] opacity-70">{invite.label || 'Wedding Day'}</p>
       <h1 className="mt-3 text-center font-serif text-4xl leading-tight sm:text-5xl">{invite.title}</h1>
       <p className={`mt-4 text-center text-lg ${accent}`}>{formattedDate}</p>
@@ -54,4 +55,19 @@ export default function InviteCard({ invite, children }: { invite: InviteData; c
       <p className="mt-8 text-center text-xs uppercase tracking-[0.2em] opacity-60">Allmemories</p>
     </section>
   );
+}
+
+export default function InviteCard({
+  invite,
+  children,
+  invitariumRsvp,
+}: {
+  invite: InviteData;
+  children?: ReactNode;
+  invitariumRsvp?: InvitariumRsvpProps;
+}) {
+  if (invite.template === 'invitarium') {
+    return <InvitariumTemplate invite={invite} rsvp={invitariumRsvp} />;
+  }
+  return <ClassicInviteCard invite={invite}>{children}</ClassicInviteCard>;
 }
