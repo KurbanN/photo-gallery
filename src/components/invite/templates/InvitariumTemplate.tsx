@@ -2,6 +2,7 @@ import type { InviteData } from '@/lib/invite-api';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { patchMaket12Html } from './invitarium/patchMaket12Html';
+import { maket12ShellIndexUrl } from './invitarium/paths';
 
 export type InvitariumRsvpProps = {
   loading: boolean;
@@ -10,7 +11,6 @@ export type InvitariumRsvpProps = {
   thankYou?: ReactNode;
 };
 
-const SHELL_URL = '/invite-assets/maket12-shell/index.html';
 
 export default function InvitariumTemplate({
   invite,
@@ -26,7 +26,7 @@ export default function InvitariumTemplate({
   useEffect(() => {
     let cancelled = false;
 
-    void fetch(SHELL_URL)
+    void fetch(maket12ShellIndexUrl())
       .then((r) => r.text())
       .then((html) => {
         if (cancelled) return;

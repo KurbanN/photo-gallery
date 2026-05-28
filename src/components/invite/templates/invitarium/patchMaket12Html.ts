@@ -2,9 +2,11 @@ import type { InviteData } from '@/lib/invite-api';
 import { INVITARIUM_DEFAULT } from './config';
 import { MAKET12_TEXT } from './maket12Texts';
 import { mapInvitariumContent } from './mapInviteContent';
-
-const TIMER_PAGE = '/invite-assets/invitarium-pages/t/6e950298a33c648472.html';
-const FORM_PAGE = '/invite-assets/invitarium-pages/f/eb5daa0293f020daa2.html';
+import {
+  invitariumFormPageUrl,
+  invitariumTimerPageUrl,
+  rewriteInviteAssetPaths,
+} from './paths';
 
 function escapeCanvaFragment(text: string): string {
   return text
@@ -67,11 +69,6 @@ function formatTime(dateIso: string | null): string | null {
   return `B  ${h}:${m}`;
 }
 
-function timerPageUrl(dateIso: string | null): string {
-  if (!dateIso) return TIMER_PAGE;
-  return `${TIMER_PAGE}?date=${encodeURIComponent(dateIso.slice(0, 10))}`;
-}
-
 export type Maket12TextPatch = { from: string; to: string };
 
 export function buildMaket12TextPatches(invite: InviteData): Maket12TextPatch[] {
@@ -112,13 +109,17 @@ export function buildMaket12TextPatches(invite: InviteData): Maket12TextPatch[] 
 export function patchMaket12Html(html: string, invite: InviteData): string {
   let out = html;
 
-  out = out.replaceAll('https://invitarium.io/t/6e950298a33c648472', timerPageUrl(invite.date));
-  out = out.replaceAll('https://invitarium.io/f/eb5daa0293f020daa2', FORM_PAGE);
-  out = out.replaceAll('/invite-assets/invitarium-pages/t/6e950298a33c648472.html', timerPageUrl(invite.date));
+  const timer = invitariumTimerPageUrl(invite.date);
+  const form = invitariumFormPageUrl();
+
+  out = out.replaceAll('https://invitarium.io/t/6e950298a33c648472', timer);
+  out = out.replaceAll('https://invitarium.io/f/eb5daa0293f020daa2', form);
+  out = out.replaceAll('/invite-assets/invitarium-pages/t/6e950298a33c648472.html', timer);
+  out = out.replaceAll('/invite-assets/invitarium-pages/f/eb5daa0293f020daa2.html', form);
 
   for (const { from, to } of buildMaket12TextPatches(invite)) {
     out = replaceCanvaText(out, from, to);
   }
 
-  return out;
+  return rewriteInviteAssetPaths(out);
 }

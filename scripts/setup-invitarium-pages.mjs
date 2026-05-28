@@ -3,7 +3,8 @@ import path from 'path';
 
 const SRC = 'C:/My Web Sites/asdasd/invitarium.io';
 const OUT = 'd:/Project/photo-gallery/public/invite-assets/invitarium-pages';
-const BUILD = '/invite-assets/invitarium/build';
+/** Относительно invitarium-pages/f|t/ → invite-assets/invitarium/build */
+const BUILD = '../../invitarium/build';
 
 function patchHtml(html, { dateIso }) {
   let h = html;
@@ -11,7 +12,7 @@ function patchHtml(html, { dateIso }) {
   h = h.replace(/https:\/\/invitarium\.io\/build\//g, `${BUILD}/`);
   h = h.replace(
     /src="\.\.\/\.\.\/cdn\.jsdelivr\.net\/npm\/luxon[^"]+"/,
-    `src="/invite-assets/invitarium/luxon.min.js"`
+    `src="../../invitarium/luxon.min.js"`
   );
   h = h.replace(/<footer class="footer">[\s\S]*?<\/footer>/g, '');
   const fallback = dateIso ? dateIso.slice(0, 10) : '2026-08-02';
