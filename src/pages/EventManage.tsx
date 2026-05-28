@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Copy, ExternalLink, Grid3x3, Loader2, Trash2, Upload } from 'lucide-react';
 import EventManageTabs, { type EventManageTab } from '@/components/EventManageTabs';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
@@ -528,6 +528,18 @@ export default function EventManage() {
                 />
               </OrganizerSection>
             )}
+
+            <OrganizerSection
+              title="Цифровое приглашение и RSVP"
+              description="Отдельная страница invite с формой подтверждения присутствия и таблицей ответов."
+            >
+              <Link
+                to={`/dashboard/events/${id}/invite`}
+                className="inline-flex rounded-full border border-line px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-ink"
+              >
+                Открыть invite-панель
+              </Link>
+            </OrganizerSection>
 
             <OrganizerSection
               title="Закрыть приём файлов"

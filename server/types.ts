@@ -8,6 +8,10 @@ export type EventSettings = {
   loginBgUrl?: string;
   headerSubtitle?: string;
   qrCardVariant?: 'classic' | 'minimal' | 'botanical' | 'noir';
+  inviteTemplate?: 'classic' | 'dark';
+  inviteDateLabel?: string;
+  inviteLocation?: string;
+  inviteMessage?: string;
 };
 
 export type EventRow = {
