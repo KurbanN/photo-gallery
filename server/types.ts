@@ -9,8 +9,12 @@ export type EventSettings = {
   headerSubtitle?: string;
   qrCardVariant?: 'classic' | 'minimal' | 'botanical' | 'noir';
   inviteTemplate?: 'classic' | 'dark';
-  inviteDateLabel?: string;
+  inviteLabel?: string;
+  inviteQuote?: string;
+  inviteVenueName?: string;
   inviteLocation?: string;
+  inviteCity?: string;
+  inviteMapUrl?: string;
   inviteMessage?: string;
 };
 

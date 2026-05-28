@@ -12,7 +12,12 @@ export type InviteData = {
   title: string;
   date: string | null;
   template: InviteTemplate;
+  label: string;
+  quote: string;
+  venueName: string;
   location: string;
+  city: string;
+  mapUrl: string;
   message: string;
 };
 
@@ -76,7 +81,12 @@ export async function saveInvite(
     title: string;
     startsAt: string | null;
     template: InviteTemplate;
+    label: string;
+    quote: string;
+    venueName: string;
     location: string;
+    city: string;
+    mapUrl: string;
     message: string;
   },
 ): Promise<InviteData> {

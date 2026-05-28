@@ -81,14 +81,24 @@ export function inviteRouter(): Router {
         title?: string;
         startsAt?: string | null;
         template?: 'classic' | 'dark';
+        label?: string;
+        quote?: string;
+        venueName?: string;
         location?: string;
+        city?: string;
+        mapUrl?: string;
         message?: string;
       };
       const invite = await upsertInviteSettings(event.id, org.id, {
         title: body.title?.trim() || event.title,
         startsAt: body.startsAt ?? event.starts_at,
         template: body.template === 'dark' ? 'dark' : 'classic',
+        label: body.label ?? ((event.settings || {}).inviteLabel as string) ?? 'Wedding Day',
+        quote: body.quote ?? ((event.settings || {}).inviteQuote as string) ?? 'С этого дня — навсегда.',
+        venueName: body.venueName ?? ((event.settings || {}).inviteVenueName as string) ?? '',
         location: body.location ?? ((event.settings || {}).inviteLocation as string) ?? '',
+        city: body.city ?? ((event.settings || {}).inviteCity as string) ?? '',
+        mapUrl: body.mapUrl ?? ((event.settings || {}).inviteMapUrl as string) ?? '',
         message: body.message ?? ((event.settings || {}).inviteMessage as string) ?? '',
       });
       res.json({ invite });

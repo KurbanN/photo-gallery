@@ -94,7 +94,12 @@ export default function EventInviteManage() {
               title: draftState.title,
               startsAt: draftState.startsAt ? new Date(draftState.startsAt).toISOString() : null,
               template: draftState.template,
+              label: draftState.label,
+              quote: draftState.quote,
+              venueName: draftState.venueName,
               location: draftState.location,
+              city: draftState.city,
+              mapUrl: draftState.mapUrl,
               message: draftState.message,
             });
             setInvite(next);

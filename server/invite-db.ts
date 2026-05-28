@@ -11,7 +11,12 @@ export type InvitePublic = {
   title: string;
   date: string | null;
   template: InviteTemplate;
+  label: string;
+  quote: string;
+  venueName: string;
   location: string;
+  city: string;
+  mapUrl: string;
   message: string;
 };
 
@@ -33,7 +38,12 @@ function readInviteFromEvent(event: EventRow): InvitePublic {
     title: event.title,
     date: event.starts_at,
     template,
+    label: settings.inviteLabel || 'Wedding Day',
+    quote: settings.inviteQuote || 'С этого дня — навсегда.',
+    venueName: settings.inviteVenueName || '',
     location: settings.inviteLocation || '',
+    city: settings.inviteCity || '',
+    mapUrl: settings.inviteMapUrl || '',
     message: settings.inviteMessage || '',
   };
 }
@@ -51,7 +61,12 @@ export async function upsertInviteSettings(
     title: string;
     startsAt: string | null;
     template: InviteTemplate;
+    label: string;
+    quote: string;
+    venueName: string;
     location: string;
+    city: string;
+    mapUrl: string;
     message: string;
   },
 ): Promise<InvitePublic> {
@@ -60,7 +75,12 @@ export async function upsertInviteSettings(
     ends_at: undefined,
     settings: {
       inviteTemplate: payload.template,
+      inviteLabel: payload.label.trim(),
+      inviteQuote: payload.quote.trim(),
+      inviteVenueName: payload.venueName.trim(),
       inviteLocation: payload.location.trim(),
+      inviteCity: payload.city.trim(),
+      inviteMapUrl: payload.mapUrl.trim(),
       inviteMessage: payload.message.trim(),
     },
   });

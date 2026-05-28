@@ -6,7 +6,12 @@ type InviteDraft = {
   title: string;
   startsAt: string;
   template: InviteTemplate;
+  label: string;
+  quote: string;
+  venueName: string;
   location: string;
+  city: string;
+  mapUrl: string;
   message: string;
 };
 
@@ -31,7 +36,12 @@ export default function InviteBuilder({
     title: draft.title || 'Название мероприятия',
     date: draft.startsAt ? new Date(draft.startsAt).toISOString() : null,
     template: draft.template,
+    label: draft.label || 'Wedding Day',
+    quote: draft.quote || 'С этого дня — навсегда.',
+    venueName: draft.venueName,
     location: draft.location,
+    city: draft.city,
+    mapUrl: draft.mapUrl,
     message: draft.message,
   };
 
@@ -42,7 +52,13 @@ export default function InviteBuilder({
           value={draft.title}
           onChange={(e) => setDraft({ ...draft, title: e.target.value })}
           className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
-          placeholder="Название события"
+          placeholder="Имена пары (напр. Kurban & Fatima)"
+        />
+        <input
+          value={draft.label}
+          onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+          className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
+          placeholder="Верхняя подпись (напр. Wedding Day)"
         />
         <input
           type="datetime-local"
@@ -51,17 +67,42 @@ export default function InviteBuilder({
           className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
         />
         <input
+          value={draft.venueName}
+          onChange={(e) => setDraft({ ...draft, venueName: e.target.value })}
+          className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
+          placeholder="Площадка / ресторан"
+        />
+        <input
           value={draft.location}
           onChange={(e) => setDraft({ ...draft, location: e.target.value })}
           className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
-          placeholder="Адрес"
+          placeholder="Адрес (улица, дом)"
+        />
+        <input
+          value={draft.city}
+          onChange={(e) => setDraft({ ...draft, city: e.target.value })}
+          className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
+          placeholder="Город"
+        />
+        <input
+          value={draft.mapUrl}
+          onChange={(e) => setDraft({ ...draft, mapUrl: e.target.value })}
+          className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
+          placeholder="Ссылка на карту (необязательно)"
         />
         <textarea
           value={draft.message}
           onChange={(e) => setDraft({ ...draft, message: e.target.value })}
           rows={4}
           className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
-          placeholder="Сообщение"
+          placeholder="Текст приглашения"
+        />
+        <textarea
+          value={draft.quote}
+          onChange={(e) => setDraft({ ...draft, quote: e.target.value })}
+          rows={2}
+          className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
+          placeholder="Цитата (напр. С этого дня — навсегда.)"
         />
         <div className="flex gap-2">
           <button
@@ -115,7 +156,12 @@ export function toDraft(invite: InviteData | null): InviteDraft {
     title: invite?.title || '',
     startsAt,
     template: invite?.template || 'classic',
+    label: invite?.label || 'Wedding Day',
+    quote: invite?.quote || 'С этого дня — навсегда.',
+    venueName: invite?.venueName || '',
     location: invite?.location || '',
+    city: invite?.city || '',
+    mapUrl: invite?.mapUrl || '',
     message: invite?.message || '',
   };
 }
