@@ -5,6 +5,7 @@ import { mapInvitariumContent } from './mapInviteContent';
 import {
   invitariumFormPageUrl,
   invitariumTimerPageUrl,
+  maket12ShellBase,
   rewriteInviteAssetPaths,
 } from './paths';
 
@@ -121,5 +122,10 @@ export function patchMaket12Html(html: string, invite: InviteData): string {
     out = replaceCanvaText(out, from, to);
   }
 
-  return rewriteInviteAssetPaths(out);
+  out = rewriteInviteAssetPaths(out);
+
+  const shellBase = maket12ShellBase();
+  out = out.replace(/<base href="[^"]*">/, `<base href="${shellBase}">`);
+
+  return out;
 }

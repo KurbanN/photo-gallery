@@ -1,6 +1,6 @@
 import type { InviteData } from '@/lib/invite-api';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { patchMaket12Html } from './invitarium/patchMaket12Html';
 import { maket12ShellIndexUrl } from './invitarium/paths';
 
@@ -11,7 +11,6 @@ export type InvitariumRsvpProps = {
   thankYou?: ReactNode;
 };
 
-
 export default function InvitariumTemplate({
   invite,
   rsvp,
@@ -19,31 +18,34 @@ export default function InvitariumTemplate({
   invite: InviteData;
   rsvp?: InvitariumRsvpProps;
 }) {
-  const [frameSrc, setFrameSrc] = useState<string | null>(null);
+  const [srcDoc, setSrcDoc] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [frameHeight, setFrameHeight] = useState(720);
-  const blobRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setLoadError(null);
+    setSrcDoc(null);
 
     void fetch(maket12ShellIndexUrl())
-      .then((r) => r.text())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
       .then((html) => {
         if (cancelled) return;
-        const patched = patchMaket12Html(html, invite);
-        const blob = new Blob([patched], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        if (blobRef.current) URL.revokeObjectURL(blobRef.current);
-        blobRef.current = url;
-        setFrameSrc(url);
+        setSrcDoc(patchMaket12Html(html, invite));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLoadError(
+            'Не удалось загрузить макет. Убедитесь, что папка public/invite-assets задеплоена на GitHub Pages.',
+          );
+        }
       });
 
     return () => {
       cancelled = true;
-      if (blobRef.current) {
-        URL.revokeObjectURL(blobRef.current);
-        blobRef.current = null;
-      }
     };
   }, [invite.title, invite.date, invite.label, invite.message, invite.quote, invite.venueName, invite.location, invite.city]);
 
@@ -84,9 +86,13 @@ export default function InvitariumTemplate({
 
   return (
     <div className="invitarium-shell mx-auto w-full max-w-[480px] overflow-hidden bg-[#F8F8F7]">
-      {frameSrc ? (
+      {loadError ? (
+        <div className="flex min-h-[320px] items-center justify-center p-4 text-center text-sm text-[#9F998E]">
+          {loadError}
+        </div>
+      ) : srcDoc ? (
         <iframe
-          src={frameSrc}
+          srcDoc={srcDoc}
           title={invite.title || 'Invitation'}
           className="w-full border-0"
           style={{ height: frameHeight, minHeight: 480 }}
