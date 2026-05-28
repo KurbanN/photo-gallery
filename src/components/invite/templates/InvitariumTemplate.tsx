@@ -1,7 +1,7 @@
 import type { InviteData } from '@/lib/invite-api';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useState } from 'react';
-import { patchMaket12Html } from './invitarium/patchMaket12Html';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { buildMaket12ShellQuery } from './invitarium/buildMaket12ShellQuery';
 import { maket12ShellIndexUrl } from './invitarium/paths';
 
 export type InvitariumRsvpProps = {
@@ -18,35 +18,11 @@ export default function InvitariumTemplate({
   invite: InviteData;
   rsvp?: InvitariumRsvpProps;
 }) {
-  const [srcDoc, setSrcDoc] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [frameHeight, setFrameHeight] = useState(720);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadError(null);
-    setSrcDoc(null);
-
-    void fetch(maket12ShellIndexUrl())
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.text();
-      })
-      .then((html) => {
-        if (cancelled) return;
-        setSrcDoc(patchMaket12Html(html, invite));
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLoadError(
-            'Не удалось загрузить макет. Убедитесь, что папка public/invite-assets задеплоена на GitHub Pages.',
-          );
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
+  const iframeSrc = useMemo(() => {
+    const qs = buildMaket12ShellQuery(invite);
+    const base = maket12ShellIndexUrl();
+    return qs ? `${base}?${qs}` : base;
   }, [invite.title, invite.date, invite.label, invite.message, invite.quote, invite.venueName, invite.location, invite.city]);
 
   const onMessage = useCallback(
@@ -86,23 +62,14 @@ export default function InvitariumTemplate({
 
   return (
     <div className="invitarium-shell mx-auto w-full max-w-[480px] overflow-hidden bg-[#F8F8F7]">
-      {loadError ? (
-        <div className="flex min-h-[320px] items-center justify-center p-4 text-center text-sm text-[#9F998E]">
-          {loadError}
-        </div>
-      ) : srcDoc ? (
-        <iframe
-          srcDoc={srcDoc}
-          title={invite.title || 'Invitation'}
-          className="w-full border-0"
-          style={{ height: frameHeight, minHeight: 480 }}
-          scrolling="no"
-        />
-      ) : (
-        <div className="flex min-h-[480px] items-center justify-center text-sm text-[#9F998E]">
-          Загрузка приглашения…
-        </div>
-      )}
+      <iframe
+        key={iframeSrc}
+        src={iframeSrc}
+        title={invite.title || 'Invitation'}
+        className="w-full border-0"
+        style={{ height: frameHeight, minHeight: 480 }}
+        scrolling="no"
+      />
     </div>
   );
 }
