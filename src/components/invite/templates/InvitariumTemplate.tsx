@@ -1,7 +1,7 @@
 import type { InviteData } from '@/lib/invite-api';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { buildMaket12ShellQuery } from './invitarium/buildMaket12ShellQuery';
+import { useCallback, useEffect, useState } from 'react';
+import { patchMaket12Html } from './invitarium/patchMaket12Html';
 import { maket12ShellIndexUrl } from './invitarium/paths';
 
 export type InvitariumRsvpProps = {
@@ -11,6 +11,18 @@ export type InvitariumRsvpProps = {
   thankYou?: ReactNode;
 };
 
+const inviteKey = (invite: InviteData) =>
+  [
+    invite.title,
+    invite.date,
+    invite.label,
+    invite.message,
+    invite.quote,
+    invite.venueName,
+    invite.location,
+    invite.city,
+  ].join('\0');
+
 export default function InvitariumTemplate({
   invite,
   rsvp,
@@ -18,12 +30,35 @@ export default function InvitariumTemplate({
   invite: InviteData;
   rsvp?: InvitariumRsvpProps;
 }) {
+  const [srcDoc, setSrcDoc] = useState<string | null>(null);
   const [frameHeight, setFrameHeight] = useState(720);
-  const iframeSrc = useMemo(() => {
-    const qs = buildMaket12ShellQuery(invite);
-    const base = maket12ShellIndexUrl();
-    return qs ? `${base}?${qs}` : base;
-  }, [invite.title, invite.date, invite.label, invite.message, invite.quote, invite.venueName, invite.location, invite.city]);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadError(false);
+    setSrcDoc(null);
+
+    const timer = window.setTimeout(() => {
+      void fetch(maket12ShellIndexUrl())
+        .then((r) => {
+          if (!r.ok) throw new Error(String(r.status));
+          return r.text();
+        })
+        .then((html) => {
+          if (cancelled) return;
+          setSrcDoc(patchMaket12Html(html, invite));
+        })
+        .catch(() => {
+          if (!cancelled) setLoadError(true);
+        });
+    }, 280);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [inviteKey(invite)]);
 
   const onMessage = useCallback(
     (event: MessageEvent) => {
@@ -52,24 +87,36 @@ export default function InvitariumTemplate({
     return () => window.removeEventListener('message', onMessage);
   }, [onMessage]);
 
-  if (rsvp?.done && rsvp.thankYou) {
+  if (loadError) {
     return (
-      <div className="mx-auto w-full max-w-[480px] rounded-xl bg-[#F8F8F7] p-6 text-center">
-        {rsvp.thankYou}
+      <div className="mx-auto max-w-[480px] rounded-xl border border-amber-200 bg-amber-50 p-4 text-center text-sm text-amber-900">
+        Не удалось загрузить макет. Проверьте, что{' '}
+        <code className="text-xs">invite-assets/maket12-shell</code> доступен на сервере.
       </div>
     );
   }
 
   return (
-    <div className="invitarium-shell mx-auto w-full max-w-[480px] overflow-hidden bg-[#F8F8F7]">
-      <iframe
-        key={iframeSrc}
-        src={iframeSrc}
-        title={invite.title || 'Invitation'}
-        className="w-full border-0"
-        style={{ height: frameHeight, minHeight: 480 }}
-        scrolling="no"
-      />
+    <div className="invitarium-shell mx-auto w-full max-w-[480px] space-y-4 bg-[#F8F8F7]">
+      {rsvp?.done && rsvp.thankYou ? (
+        <div className="rounded-xl border border-[#d7c7ad]/60 bg-[#FAFAF7] p-4 shadow-sm">{rsvp.thankYou}</div>
+      ) : null}
+      <div className="overflow-hidden">
+        {srcDoc ? (
+          <iframe
+            key={inviteKey(invite)}
+            srcDoc={srcDoc}
+            title={invite.title || 'Invitation'}
+            className="w-full border-0"
+            style={{ height: frameHeight, minHeight: 480 }}
+            scrolling="no"
+          />
+        ) : (
+          <div className="flex min-h-[480px] items-center justify-center text-sm text-[#9F998E]">
+            Загрузка приглашения…
+          </div>
+        )}
+      </div>
     </div>
   );
 }

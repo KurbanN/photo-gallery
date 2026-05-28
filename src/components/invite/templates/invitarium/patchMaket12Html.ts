@@ -71,7 +71,10 @@ export function buildMaket12TextPatches(invite: InviteData): Maket12TextPatch[] 
 
   const patches: Maket12TextPatch[] = [
     { from: MAKET12_TEXT.nameTop, to: names.top || MAKET12_TEXT.nameTop },
-    { from: MAKET12_TEXT.nameBottom, to: names.bottom || MAKET12_TEXT.nameBottom },
+    {
+      from: MAKET12_TEXT.nameBottom,
+      to: names.bottom.trim() ? names.bottom : ' ',
+    },
     { from: MAKET12_TEXT.dateFull, to: content.dateDay && content.dateYear ? `${content.dateDay}.${content.dateYear}` : MAKET12_TEXT.dateFull },
     { from: MAKET12_TEXT.dateDay, to: content.dateDay || MAKET12_TEXT.dateDay },
     { from: MAKET12_TEXT.dateYear, to: content.dateYear || MAKET12_TEXT.dateYear },
@@ -84,7 +87,10 @@ export function buildMaket12TextPatches(invite: InviteData): Maket12TextPatch[] 
           { from: MAKET12_TEXT.labelLine1, to: label.line1 || MAKET12_TEXT.labelLine1 },
           { from: MAKET12_TEXT.labelLine2, to: label.line2 || MAKET12_TEXT.labelLine2 },
         ]),
-    { from: MAKET12_TEXT.message, to: invite.message || INVITARIUM_DEFAULT.message },
+    {
+      from: MAKET12_TEXT.message,
+      to: (invite.message || INVITARIUM_DEFAULT.message).replace(/\\n/g, '\n'),
+    },
     { from: MAKET12_TEXT.quoteIntro, to: quote.intro || MAKET12_TEXT.quoteIntro },
     { from: MAKET12_TEXT.venue, to: venue },
     { from: MAKET12_TEXT.countdownTitle, to: INVITARIUM_DEFAULT.countdownTitle },

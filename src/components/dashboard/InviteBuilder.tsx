@@ -31,6 +31,8 @@ export default function InviteBuilder({
   inviteUrl: string;
   previewSlug: string;
 }) {
+  const isInvitarium = draft.template === 'invitarium';
+
   const previewInvite: InviteData = {
     eventId: 'preview',
     slug: previewSlug || 'preview',
@@ -53,13 +55,19 @@ export default function InviteBuilder({
           value={draft.title}
           onChange={(e) => setDraft({ ...draft, title: e.target.value })}
           className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
-          placeholder="Имена пары (напр. Kurban & Fatima)"
+          placeholder={
+            isInvitarium ? 'Имена на макете (Nazar & Anita)' : 'Имена пары (напр. Kurban & Fatima)'
+          }
         />
         <input
           value={draft.label}
           onChange={(e) => setDraft({ ...draft, label: e.target.value })}
           className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
-          placeholder="Верхняя подпись (напр. Wedding Day)"
+          placeholder={
+            isInvitarium
+              ? 'Первая строка приглашения (было: «Мы счастливы…»)'
+              : 'Верхняя подпись (напр. Wedding Day)'
+          }
         />
         <input
           type="datetime-local"
@@ -96,7 +104,9 @@ export default function InviteBuilder({
           onChange={(e) => setDraft({ ...draft, message: e.target.value })}
           rows={4}
           className="w-full rounded-lg border border-line/70 bg-paper px-3 py-2"
-          placeholder="Текст приглашения"
+          placeholder={
+            isInvitarium ? 'Текст «Приглашаем присоединиться…»' : 'Текст приглашения'
+          }
         />
         <textarea
           value={draft.quote}
