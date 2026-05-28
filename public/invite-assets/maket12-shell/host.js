@@ -9,35 +9,49 @@
 
   function replaceCanvaInBootstrap(bootstrapStr, oldText, newText) {
     if (!oldText || oldText === newText) return bootstrapStr;
-    const from = '"A":"' + escapeCanvaFragment(oldText) + '\\\\n"';
-    const to = '"A":"' + escapeCanvaFragment(newText) + '\\\\n"';
-    return bootstrapStr.includes(from) ? bootstrapStr.split(from).join(to) : bootstrapStr;
+    var from = '"A":"' + escapeCanvaFragment(oldText) + '\\\\n"';
+    var to = '"A":"' + escapeCanvaFragment(newText) + '\\\\n"';
+    return bootstrapStr.indexOf(from) !== -1 ? bootstrapStr.split(from).join(to) : bootstrapStr;
+  }
+
+  function loadPatches() {
+    var params = new URLSearchParams(window.location.search);
+    var patchId = params.get('patchId');
+    if (patchId) {
+      try {
+        var raw = sessionStorage.getItem('maket12-patches:' + patchId);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    var p = params.get('p');
+    if (!p) return null;
+    try {
+      return JSON.parse(decodeURIComponent(escape(atob(p))));
+    } catch (e) {
+      return null;
+    }
   }
 
   window.__maket12ApplyPatches = function (bootstrapStr) {
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get('p');
-    if (!raw) return bootstrapStr;
-    try {
-      const patches = JSON.parse(decodeURIComponent(escape(atob(raw))));
-      if (!Array.isArray(patches)) return bootstrapStr;
-      let out = bootstrapStr;
-      const sorted = patches.slice().sort(function (a, b) {
+    var patches = loadPatches();
+    if (!Array.isArray(patches)) return bootstrapStr;
+    var out = bootstrapStr;
+    patches
+      .slice()
+      .sort(function (a, b) {
         return (b.from || '').length - (a.from || '').length;
-      });
-      for (var i = 0; i < sorted.length; i++) {
-        var patch = sorted[i];
+      })
+      .forEach(function (patch) {
         if (patch && patch.from != null && patch.to != null) {
           out = replaceCanvaInBootstrap(out, patch.from, patch.to);
         }
-      }
-      return out;
-    } catch (e) {
-      return bootstrapStr;
-    }
+      });
+    return out;
   };
 
-  const timerDate = new URLSearchParams(window.location.search).get('timerDate');
+  var timerDate = new URLSearchParams(window.location.search).get('timerDate');
 
   function patchTimerIframes() {
     if (!timerDate) return;

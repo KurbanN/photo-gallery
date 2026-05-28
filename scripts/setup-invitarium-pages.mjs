@@ -32,26 +32,35 @@ function patchFormHtml(html) {
   );
   const bridge = `
 <script>
+window.__INVITARIUM_RSVP_BRIDGE__ = true;
 (function () {
-  const wrapper = document.getElementById('responseFormWrapper');
-  const form = document.getElementById('responseForm');
-  if (!wrapper || !form) return;
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    const nameInput = form.querySelector('input[data-field-id="5380"]');
-    const yes = form.querySelector('#yes');
-    const no = form.querySelector('#no');
-    const transfer = form.querySelector('input[name="field_5381"]:checked, input[data-field-id="5381"]:checked');
-    const name = (nameInput && nameInput.value || '').trim();
-    let status = 'maybe';
-    if (yes && yes.checked) status = 'attending';
-    else if (no && no.checked) status = 'declined';
-    const comment = transfer ? String(transfer.value || '').trim() : '';
-    window.top.postMessage({ type: 'invitarium-rsvp', payload: { name, status, comment } }, '*');
-  }, true);
+  function bindRsvp() {
+    var form = document.getElementById('responseForm');
+    if (!form || form.dataset.rsvpBridge === '1') return;
+    form.dataset.rsvpBridge = '1';
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var nameInput = form.querySelector('input[data-field-id="5380"]');
+      var yes = form.querySelector('#yes');
+      var no = form.querySelector('#no');
+      var transfer = form.querySelector('input[name="field_5381"]:checked, input[data-field-id="5381"]:checked');
+      var name = (nameInput && nameInput.value || '').trim();
+      var status = 'maybe';
+      if (yes && yes.checked) status = 'attending';
+      else if (no && no.checked) status = 'declined';
+      var comment = transfer ? String(transfer.value || '').trim() : '';
+      window.top.postMessage({ type: 'invitarium-rsvp', payload: { name: name, status: status, comment: comment } }, '*');
+    }, true);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindRsvp);
+  } else {
+    bindRsvp();
+  }
 })();
 </script>`;
+  h = h.replace(/form\.addEventListener\('submit', async function\(e\) \{[\s\S]*?\}\);\s*\n\s*\/\/ --- Вспомогательные функции ---/, '// RSVP: bridge script handles submit\n            // --- Вспомогательные функции ---');
   return h.replace('</body>', `${bridge}</body>`);
 }
 

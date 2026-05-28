@@ -19,9 +19,9 @@ function splitNames(title: string): { top: string; bottom: string } {
 function parseDate(dateIso: string | null): { day: string; year: string } {
   if (!dateIso) return { day: '', year: '' };
   const d = new Date(dateIso);
-  const dd = String(d.getUTCDate()).padStart(2, '0');
-  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-  return { day: `${dd}.${mm}`, year: String(d.getUTCFullYear()) };
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return { day: `${dd}.${mm}`, year: String(d.getFullYear()) };
 }
 
 export function mapInvitariumContent(invite: InviteData): InvitariumContent {

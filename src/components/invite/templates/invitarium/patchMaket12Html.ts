@@ -8,22 +8,10 @@ import {
   maket12ShellBase,
   rewriteInviteAssetPaths,
 } from './paths';
+import { replaceCanvaInBootstrap } from './replaceCanvaBootstrap';
 
-function escapeCanvaFragment(text: string): string {
-  return text
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\r\n/g, '\n')
-    .replace(/\n/g, '\\n');
-}
-
-/** Замена одного текстового блока Canva: "A":"…\\n" */
 function replaceCanvaText(html: string, oldText: string, newText: string): string {
-  if (oldText === newText) return html;
-  const from = `"A":"${escapeCanvaFragment(oldText)}\\\\n"`;
-  const to = `"A":"${escapeCanvaFragment(newText)}\\\\n"`;
-  if (!html.includes(from)) return html;
-  return html.split(from).join(to);
+  return replaceCanvaInBootstrap(html, oldText, newText);
 }
 
 function splitNames(title: string): { top: string; bottom: string } {
@@ -32,13 +20,14 @@ function splitNames(title: string): { top: string; bottom: string } {
   return { top: title.trim(), bottom: '' };
 }
 
-function splitLabel(label: string): { line1: string; line2: string } {
+function splitLabel(label: string): { line1: string; line2: string; singleLine: boolean } {
   const normalized = label.replace(/\\n/g, '\n').trim();
   const idx = normalized.indexOf('\n');
-  if (idx === -1) return { line1: normalized, line2: '' };
+  if (idx === -1) return { line1: normalized, line2: '', singleLine: true };
   return {
     line1: normalized.slice(0, idx).trim(),
     line2: normalized.slice(idx + 1).trim(),
+    singleLine: false,
   };
 }
 
@@ -64,8 +53,8 @@ function formatVenue(invite: InviteData): string {
 function formatTime(dateIso: string | null): string | null {
   if (!dateIso) return null;
   const d = new Date(dateIso);
-  const h = String(d.getUTCHours()).padStart(2, '0');
-  const m = String(d.getUTCMinutes()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
   if (h === '00' && m === '00') return null;
   return `B  ${h}:${m}`;
 }
@@ -86,8 +75,15 @@ export function buildMaket12TextPatches(invite: InviteData): Maket12TextPatch[] 
     { from: MAKET12_TEXT.dateFull, to: content.dateDay && content.dateYear ? `${content.dateDay}.${content.dateYear}` : MAKET12_TEXT.dateFull },
     { from: MAKET12_TEXT.dateDay, to: content.dateDay || MAKET12_TEXT.dateDay },
     { from: MAKET12_TEXT.dateYear, to: content.dateYear || MAKET12_TEXT.dateYear },
-    { from: MAKET12_TEXT.labelLine1, to: label.line1 || MAKET12_TEXT.labelLine1 },
-    { from: MAKET12_TEXT.labelLine2, to: label.line2 || MAKET12_TEXT.labelLine2 },
+    ...(label.singleLine
+      ? [
+          { from: MAKET12_TEXT.labelLine1, to: label.line1 },
+          { from: MAKET12_TEXT.labelLine2, to: ' ' },
+        ]
+      : [
+          { from: MAKET12_TEXT.labelLine1, to: label.line1 || MAKET12_TEXT.labelLine1 },
+          { from: MAKET12_TEXT.labelLine2, to: label.line2 || MAKET12_TEXT.labelLine2 },
+        ]),
     { from: MAKET12_TEXT.message, to: invite.message || INVITARIUM_DEFAULT.message },
     { from: MAKET12_TEXT.quoteIntro, to: quote.intro || MAKET12_TEXT.quoteIntro },
     { from: MAKET12_TEXT.venue, to: venue },
