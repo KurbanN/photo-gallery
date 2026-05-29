@@ -8,10 +8,38 @@ import {
   maket12ShellBase,
   rewriteInviteAssetPaths,
 } from './paths';
-import { replaceCanvaInBootstrap } from './replaceCanvaBootstrap';
+import { replaceCanvaInBootstrap, type ReplaceCanvaOptions } from './replaceCanvaBootstrap';
 
-function replaceCanvaText(html: string, oldText: string, newText: string): string {
-  return replaceCanvaInBootstrap(html, oldText, newText);
+function replaceCanvaText(
+  html: string,
+  oldText: string,
+  newText: string,
+  options?: ReplaceCanvaOptions,
+): string {
+  return replaceCanvaInBootstrap(html, oldText, newText, options);
+}
+
+/** Имена: в макете по 2 слоя (основной + копия); патчим только первый, второй скрываем. */
+function applyMaket12NamePatches(html: string, invite: InviteData): string {
+  const names = splitNames(invite.title || INVITARIUM_DEFAULT.title);
+  const top = names.top || MAKET12_TEXT.nameTop;
+  const bottom = names.bottom.trim() ? names.bottom : ' ';
+
+  let out = html;
+
+  out = replaceCanvaText(out, MAKET12_TEXT.nameTop, ' ', { occurrence: 2 });
+  out = replaceCanvaText(out, MAKET12_TEXT.nameBottom, ' ', { occurrence: 2 });
+
+  out = replaceCanvaText(out, MAKET12_TEXT.nameTop, top, { occurrence: 1 });
+  out = replaceCanvaText(out, MAKET12_TEXT.nameBottom, bottom, { occurrence: 1 });
+
+  if (bottom.trim() || top !== MAKET12_TEXT.nameTop) {
+    const from = `"font-size":{"B":"${MAKET12_TEXT.nameBottomFontSize}"}`;
+    const to = `"font-size":{"B":"${MAKET12_TEXT.nameTopFontSize}"}`;
+    if (out.includes(from)) out = out.split(from).join(to);
+  }
+
+  return out;
 }
 
 function splitNames(title: string): { top: string; bottom: string } {
@@ -63,18 +91,12 @@ export type Maket12TextPatch = { from: string; to: string };
 
 export function buildMaket12TextPatches(invite: InviteData): Maket12TextPatch[] {
   const content = mapInvitariumContent(invite);
-  const names = splitNames(invite.title || INVITARIUM_DEFAULT.title);
   const label = splitLabel(invite.label || INVITARIUM_DEFAULT.label);
   const quote = splitQuote(invite.quote || INVITARIUM_DEFAULT.quote);
   const venue = formatVenue(invite);
   const time = formatTime(invite.date);
 
   const patches: Maket12TextPatch[] = [
-    { from: MAKET12_TEXT.nameTop, to: names.top || MAKET12_TEXT.nameTop },
-    {
-      from: MAKET12_TEXT.nameBottom,
-      to: names.bottom.trim() ? names.bottom : ' ',
-    },
     { from: MAKET12_TEXT.dateFull, to: content.dateDay && content.dateYear ? `${content.dateDay}.${content.dateYear}` : MAKET12_TEXT.dateFull },
     { from: MAKET12_TEXT.dateDay, to: content.dateDay || MAKET12_TEXT.dateDay },
     { from: MAKET12_TEXT.dateYear, to: content.dateYear || MAKET12_TEXT.dateYear },
@@ -108,17 +130,51 @@ export function buildMaket12TextPatches(invite: InviteData): Maket12TextPatch[] 
     .sort((a, b) => b.from.length - a.from.length);
 }
 
+const TIMER_ID = '6e950298a33c648472';
+
+/** Все варианты ссылки на таймер в Canva-export (в т.ч. URL-encoded в canva-embed). */
+function replaceTimerEmbedUrls(html: string, timerRel: string, timerAbs: string): string {
+  let out = html;
+  const legacy = [
+    `https://invitarium.io/t/${TIMER_ID}`,
+    `/invite-assets/invitarium-pages/t/${TIMER_ID}.html`,
+  ];
+  for (const from of legacy) {
+    out = out.split(from).join(timerRel);
+  }
+  const encodedLegacy = [
+    encodeURIComponent(`https://invitarium.io/t/${TIMER_ID}`),
+    encodeURIComponent(`https://invitarium.io/t/${TIMER_ID}/`),
+  ];
+  const encodedTimer = encodeURIComponent(timerAbs);
+  for (const from of encodedLegacy) {
+    out = out.split(from).join(encodedTimer);
+  }
+  return out;
+}
+
+function injectMaket12TimerConfig(html: string, timerAbs: string): string {
+  const snippet = `<script>window.__MAKET12_TIMER_URL__=${JSON.stringify(timerAbs)};</script>`;
+  if (html.includes('host.js"></script>')) {
+    return html.replace('host.js"></script>', `host.js"></script>${snippet}`);
+  }
+  return html.replace('<head>', `<head>${snippet}`);
+}
+
 /** Патчит HTML Canva-export: тексты, embed Invitarium, дата таймера. */
 export function patchMaket12Html(html: string, invite: InviteData): string {
   let out = html;
 
-  const timer = invitariumTimerPageUrl(invite.date);
+  const timerRel = invitariumTimerPageUrl(invite.date);
+  const timerAbs = invitariumTimerPageUrl(invite.date, { absolute: true });
   const form = invitariumFormPageUrl();
 
-  out = out.replaceAll('https://invitarium.io/t/6e950298a33c648472', timer);
+  out = replaceTimerEmbedUrls(out, timerRel, timerAbs);
   out = out.replaceAll('https://invitarium.io/f/eb5daa0293f020daa2', form);
-  out = out.replaceAll('/invite-assets/invitarium-pages/t/6e950298a33c648472.html', timer);
   out = out.replaceAll('/invite-assets/invitarium-pages/f/eb5daa0293f020daa2.html', form);
+  out = injectMaket12TimerConfig(out, timerAbs);
+
+  out = applyMaket12NamePatches(out, invite);
 
   for (const { from, to } of buildMaket12TextPatches(invite)) {
     out = replaceCanvaText(out, from, to);

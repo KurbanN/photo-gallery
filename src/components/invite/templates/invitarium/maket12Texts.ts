@@ -2,6 +2,9 @@
 export const MAKET12_TEXT = {
   nameTop: 'Nazar',
   nameBottom: 'Anita',
+  /** Canva font-size в bootstrap — у второго имени был меньше, из-за этого «другой шрифт». */
+  nameTopFontSize: '198.493',
+  nameBottomFontSize: '26.0026',
   dateFull: '02.08.2026',
   dateDay: '02.08',
   dateYear: '2026',

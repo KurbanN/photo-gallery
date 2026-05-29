@@ -124,11 +124,9 @@
 
             const params = new URLSearchParams(window.location.search);
             const dateString = params.get('date') || '2026-08-02';
-            const timezone = "UTC";
-
-            const targetDate = DateTime.fromSQL(dateString, {
-                zone: timezone
-            }).toJSDate();
+            const targetDate = dateString.includes('T')
+                ? DateTime.fromISO(dateString, { zone: 'local' }).toJSDate()
+                : DateTime.fromSQL(dateString, { zone: 'local' }).toJSDate();
 
             const timer = new Timer(timerElement);
             timer.setUnits(["days","hours","minutes","seconds"]);

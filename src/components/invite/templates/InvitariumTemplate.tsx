@@ -1,6 +1,6 @@
 import type { InviteData } from '@/lib/invite-api';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { patchMaket12Html } from './invitarium/patchMaket12Html';
 import { maket12ShellIndexUrl } from './invitarium/paths';
 
@@ -33,31 +33,42 @@ export default function InvitariumTemplate({
   const [srcDoc, setSrcDoc] = useState<string | null>(null);
   const [frameHeight, setFrameHeight] = useState(720);
   const [loadError, setLoadError] = useState(false);
+  const shellHtmlRef = useRef<string | null>(null);
+  const inviteRef = useRef(invite);
+  inviteRef.current = invite;
 
   useEffect(() => {
     let cancelled = false;
     setLoadError(false);
-    setSrcDoc(null);
 
-    const timer = window.setTimeout(() => {
-      void fetch(maket12ShellIndexUrl())
-        .then((r) => {
-          if (!r.ok) throw new Error(String(r.status));
-          return r.text();
-        })
-        .then((html) => {
-          if (cancelled) return;
-          setSrcDoc(patchMaket12Html(html, invite));
-        })
-        .catch(() => {
-          if (!cancelled) setLoadError(true);
-        });
-    }, 280);
+    void fetch(maket12ShellIndexUrl())
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.text();
+      })
+      .then((html) => {
+        if (cancelled) return;
+        shellHtmlRef.current = html;
+        setSrcDoc(patchMaket12Html(html, inviteRef.current));
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      });
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
     };
+  }, []);
+
+  useEffect(() => {
+    const shell = shellHtmlRef.current;
+    if (!shell) return;
+
+    const timer = window.setTimeout(() => {
+      setSrcDoc(patchMaket12Html(shell, invite));
+    }, 280);
+
+    return () => window.clearTimeout(timer);
   }, [inviteKey(invite)]);
 
   const onMessage = useCallback(
@@ -104,12 +115,12 @@ export default function InvitariumTemplate({
       <div className="overflow-hidden">
         {srcDoc ? (
           <iframe
-            key={inviteKey(invite)}
             srcDoc={srcDoc}
             title={invite.title || 'Invitation'}
             className="w-full border-0"
             style={{ height: frameHeight, minHeight: 480 }}
             scrolling="no"
+            tabIndex={-1}
           />
         ) : (
           <div className="flex min-h-[480px] items-center justify-center text-sm text-[#9F998E]">

@@ -156,7 +156,7 @@ export default function InviteBuilder({
           <p className="text-xs uppercase tracking-[0.14em] text-muted">Ссылка</p>
           <p className="mt-1 break-all text-sm">{inviteUrl}</p>
         </div>
-        <div>
+        <div className="[overflow-anchor:none] lg:sticky lg:top-6 lg:self-start">
           <p className="mb-2 text-xs uppercase tracking-[0.14em] text-muted">Живое превью</p>
           <InviteCard
             invite={previewInvite}

@@ -7,12 +7,41 @@ export function escapeCanvaFragment(text: string): string {
     .replace(/\n/g, '\\n');
 }
 
+export type ReplaceCanvaOptions = {
+  /** Номер вхождения с 1; без replaceAll меняется только оно */
+  occurrence?: number;
+  /** По умолчанию true, если не задан occurrence */
+  replaceAll?: boolean;
+};
+
 /** Замена текстового блока Canva в строке bootstrap. */
-export function replaceCanvaInBootstrap(bootstrapStr: string, oldText: string, newText: string): string {
-  if (!oldText || oldText === newText) return bootstrapStr;
+export function replaceCanvaInBootstrap(
+  bootstrapStr: string,
+  oldText: string,
+  newText: string,
+  options?: ReplaceCanvaOptions,
+): string {
+  if (!oldText) return bootstrapStr;
+  const replaceAll = options?.replaceAll ?? options?.occurrence == null;
+  if (oldText === newText && replaceAll) return bootstrapStr;
+
   const from = `"A":"${escapeCanvaFragment(oldText)}\\\\n"`;
   const to = `"A":"${escapeCanvaFragment(newText)}\\\\n"`;
-  return bootstrapStr.includes(from) ? bootstrapStr.split(from).join(to) : bootstrapStr;
+  if (!bootstrapStr.includes(from)) return bootstrapStr;
+
+  if (replaceAll) {
+    return bootstrapStr.split(from).join(to);
+  }
+
+  const occurrence = options?.occurrence ?? 1;
+  let idx = -1;
+  let start = 0;
+  for (let k = 0; k < occurrence; k++) {
+    idx = bootstrapStr.indexOf(from, start);
+    if (idx < 0) return bootstrapStr;
+    start = idx + from.length;
+  }
+  return bootstrapStr.slice(0, idx) + to + bootstrapStr.slice(idx + from.length);
 }
 
 export function applyCanvaPatches(bootstrapStr: string, patches: { from: string; to: string }[]): string {

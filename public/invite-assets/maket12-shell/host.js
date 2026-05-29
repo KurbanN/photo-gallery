@@ -52,12 +52,28 @@
   };
 
   var timerDate = new URLSearchParams(window.location.search).get('timerDate');
+  var timerUrl = window.__MAKET12_TIMER_URL__;
 
   function patchTimerIframes() {
-    if (!timerDate) return;
     document.querySelectorAll('iframe').forEach(function (iframe) {
       var raw = iframe.getAttribute('src') || iframe.src || '';
-      if (raw.indexOf('6e950298a33c648472') === -1 || raw.indexOf('date=') !== -1) return;
+      if (raw.indexOf('6e950298a33c648472') === -1) return;
+
+      if (timerUrl) {
+        try {
+          if (raw.indexOf('canva-embed.com') !== -1) {
+            iframe.src =
+              'https://canva-embed.com/api/iframe?url=' + encodeURIComponent(timerUrl);
+          } else {
+            iframe.src = new URL(timerUrl, window.location.href).href;
+          }
+        } catch (e) {
+          /* ignore */
+        }
+        return;
+      }
+
+      if (!timerDate || raw.indexOf('date=') !== -1) return;
       try {
         var url = new URL(raw, window.location.href);
         url.searchParams.set('date', timerDate);
