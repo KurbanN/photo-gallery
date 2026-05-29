@@ -168,6 +168,33 @@ export async function listEventPhotos(id: string): Promise<OrgPhoto[]> {
   return body.photos ?? [];
 }
 
+/** Скачать все одобренные фото и видео мероприятия одним ZIP. */
+export async function downloadEventPhotosZip(eventId: string, slug: string): Promise<void> {
+  assertApi();
+  const supabase = createClient();
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error('Нужен вход');
+
+  const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/photos/download.zip`), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await parseApiJson<{ error?: string }>(res).catch(() => ({ error: 'Ошибка' }));
+    throw new Error(body.error || 'Не удалось скачать архив');
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${slug}-photos.zip`;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function deleteOrgPhoto(eventId: string, photoId: string): Promise<void> {
   const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/photos/${photoId}`), {
     method: 'DELETE',

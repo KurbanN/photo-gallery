@@ -4,7 +4,11 @@ import path from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  /** GitHub Pages project sites need a subpath; set `VITE_BASE_PATH` in CI (see workflow). */
+  /**
+   * Базовый путь приложения.
+   * - PS.KZ / свой домен в корне: `/` (по умолчанию) — `npm run build:hosting`
+   * - GitHub Pages project site: `VITE_BASE_PATH=/photo-gallery/` — `npm run build:pages`
+   */
   base: process.env.VITE_BASE_PATH ?? '/',
   plugins: [react(), tailwindcss()],
   resolve: {

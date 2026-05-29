@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Copy, ExternalLink, Grid3x3, Loader2, Monitor, Trash2, Upload } from 'lucide-react';
+import { Archive, Copy, ExternalLink, Grid3x3, Loader2, Monitor, Trash2, Upload } from 'lucide-react';
 import EventManageTabs, { type EventManageTab } from '@/components/EventManageTabs';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
 import QrPrintCardSection from '@/components/QrPrintCardSection';
@@ -23,6 +23,7 @@ import { resolveBgUrl } from '@/lib/resolve-bg-url';
 import {
   deleteAdminEvent,
   deleteOrgPhoto,
+  downloadEventPhotosZip,
   endEvent,
   fetchMe,
   getEvent,
@@ -95,6 +96,8 @@ export default function EventManage() {
   const [profile, setProfile] = useState<OrganizerProfile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [photos, setPhotos] = useState<OrgPhoto[]>([]);
+  const [zipBusy, setZipBusy] = useState(false);
+  const [zipMsg, setZipMsg] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -365,15 +368,41 @@ export default function EventManage() {
               </OrganizerSection>
             ) : null}
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
                 <Grid3x3 className="mr-1 inline h-3.5 w-3.5" />
                 {photos.length} в галерее
               </p>
-              <BtnSecondary onClick={() => void load()} className="!w-auto !py-2">
-                Обновить
-              </BtnSecondary>
+              <div className="flex flex-wrap gap-2">
+                {photos.length > 0 ? (
+                  <BtnSecondary
+                    disabled={zipBusy}
+                    onClick={() => {
+                      setZipMsg('');
+                      setZipBusy(true);
+                      void downloadEventPhotosZip(id, slug)
+                        .then(() => setZipMsg('Архив скачан'))
+                        .catch((e) =>
+                          setZipMsg(e instanceof Error ? e.message : 'Не удалось скачать архив'),
+                        )
+                        .finally(() => setZipBusy(false));
+                    }}
+                    className="!w-auto !py-2"
+                  >
+                    {zipBusy ? (
+                      <Loader2 className="mr-1 inline h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Archive className="mr-1 inline h-3.5 w-3.5" />
+                    )}
+                    {zipBusy ? 'Собираем архив…' : 'Все фото (ZIP)'}
+                  </BtnSecondary>
+                ) : null}
+                <BtnSecondary onClick={() => void load()} className="!w-auto !py-2">
+                  Обновить
+                </BtnSecondary>
+              </div>
             </div>
+            {zipMsg ? <p className="text-xs text-muted">{zipMsg}</p> : null}
 
             {photos.length === 0 ? (
               <div className="border border-dashed border-line px-6 py-16 text-center">

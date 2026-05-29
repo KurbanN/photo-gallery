@@ -8,6 +8,7 @@
     "dev:server": "tsx watch server/index.ts",
     "dev:client": "vite --port 5174 --host 0.0.0.0",
     "build": "node scripts/copy-demo-photos.mjs && vite build && tsc -p tsconfig.server.json",
+    "build:hosting": "node scripts/copy-demo-photos.mjs && vite build && node scripts/static-hosting-postbuild.mjs && node scripts/verify-static-build.mjs",
     "build:pages": "node scripts/copy-demo-photos.mjs && vite build && node scripts/gh-pages-postbuild.mjs",
     "start": "node dist-server/index.js",
     "preview": "vite preview --port 5174",
@@ -16,6 +17,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.49.4",
+    "archiver": "^8.0.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
@@ -34,6 +36,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.14",
+    "@types/archiver": "^7.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",

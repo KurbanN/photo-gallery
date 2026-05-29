@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import archiver from 'archiver';
 import multer from 'multer';
 import QRCode from 'qrcode';
+import { appendEventPhotosToArchive, listPhotoRowsForZip } from '../event-photos-zip.js';
 import { assertCanCreateEvent, withEventQuota } from '../client-quota.js';
 import { getOrganizer, requireOrganizer, requireEventManager } from '../auth.js';
 import type { AuthUser } from '../auth.js';
@@ -229,6 +231,44 @@ export function organizerRouter(): Router {
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: 'Ошибка' });
+    }
+  });
+
+  router.get('/events/:id/photos/download.zip', async (req, res) => {
+    try {
+      const org = getOrganizer(req);
+      const event = await getEventById(req.params.id);
+      if (!event || !canAccessEvent(event, org)) {
+        res.status(404).json({ error: 'Не найдено' });
+        return;
+      }
+      const rows = await listPhotoRowsForZip(event.id);
+      if (rows.length === 0) {
+        res.status(404).json({ error: 'В галерее пока нет файлов для архива' });
+        return;
+      }
+
+      const asciiName = `${event.slug}-photos.zip`.replace(/[^\x20-\x7E]/g, '_');
+      const utf8Name = `${event.slug}-photos.zip`;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(utf8Name)}`,
+      );
+
+      const archive = archiver('zip', { zlib: { level: 6 } });
+      archive.on('error', (err) => {
+        console.error('ZIP archive error:', err);
+        if (!res.headersSent) res.status(500).json({ error: 'Ошибка архива' });
+        else res.end();
+      });
+      archive.pipe(res);
+
+      await appendEventPhotosToArchive(event.id, archive, rows);
+      await archive.finalize();
+    } catch (e) {
+      console.error(e);
+      if (!res.headersSent) res.status(500).json({ error: 'Не удалось собрать архив' });
     }
   });
 
