@@ -1,6 +1,5 @@
 import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { spawnSync } from 'child_process';
 
 const dist = join(process.cwd(), 'dist');
 const index = join(dist, 'index.html');
@@ -22,17 +21,4 @@ if (existsSync(demoSrc)) {
     cpSync(join(demoSrc, name), join(demoDest, name), { force: true });
   }
   console.log(`[gh-pages] demo-photos: ${imgs.length} file(s)`);
-}
-
-const maket12Index = join(dist, 'invite-assets/maket12-shell/index.html');
-if (existsSync(maket12Index)) {
-  const base = process.env.VITE_BASE_PATH ?? '/';
-  const r = spawnSync(
-    process.execPath,
-    ['scripts/patch-maket12-shell.mjs', maket12Index],
-    { stdio: 'inherit', env: { ...process.env, VITE_BASE_PATH: base } },
-  );
-  if (r.status !== 0) process.exit(r.status ?? 1);
-} else {
-  console.warn('[gh-pages] invite-assets/maket12-shell/index.html missing in dist — skip maket12 patch');
 }

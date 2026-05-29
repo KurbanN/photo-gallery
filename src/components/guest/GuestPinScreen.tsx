@@ -10,6 +10,8 @@ type Props = {
   error: string;
   loading: boolean;
   onSubmit: () => void;
+  description?: string;
+  submitLabel?: string;
 };
 
 export default function GuestPinScreen({
@@ -21,6 +23,8 @@ export default function GuestPinScreen({
   error,
   loading,
   onSubmit,
+  description = 'Введите код с карточки на столе, чтобы просматривать и загружать фото с мероприятия',
+  submitLabel = 'Продолжить',
 }: Props) {
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden">
@@ -50,9 +54,7 @@ export default function GuestPinScreen({
           <h1 className="mb-3 text-center font-serif text-3xl text-white md:text-4xl">
             Это закрытый альбом
           </h1>
-          <p className="mb-10 max-w-xs text-center text-sm leading-relaxed text-white/80">
-            Введите код с карточки на столе, чтобы просматривать и загружать фото с мероприятия
-          </p>
+          <p className="mb-10 max-w-xs text-center text-sm leading-relaxed text-white/80">{description}</p>
           <PinInput4 value={pin} onChange={onPinChange} disabled={loading} />
           {error && <p className="mt-4 text-center text-sm text-red-300">{error}</p>}
         </div>
@@ -69,7 +71,7 @@ export default function GuestPinScreen({
               Проверка…
             </span>
           ) : (
-            'Продолжить'
+            submitLabel
           )}
         </button>
       </div>

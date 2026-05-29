@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Copy, ExternalLink, Grid3x3, Loader2, Trash2, Upload } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Copy, ExternalLink, Grid3x3, Loader2, Monitor, Trash2, Upload } from 'lucide-react';
 import EventManageTabs, { type EventManageTab } from '@/components/EventManageTabs';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
 import QrPrintCardSection from '@/components/QrPrintCardSection';
@@ -18,6 +18,7 @@ import {
 import { usePageTitle } from '@/lib/brand';
 import { DEFAULT_GUEST_SUBTITLE, buildGuestScreenSettings, readQrCardVariant } from '@/lib/event-branding';
 import type { QrCardVariant } from '@/lib/qr-card-variants';
+import { liveDisplayUrl } from '@/lib/app-url';
 import { resolveBgUrl } from '@/lib/resolve-bg-url';
 import {
   deleteAdminEvent,
@@ -90,6 +91,7 @@ export default function EventManage() {
   const [pinDraft, setPinDraft] = useState('');
   const [pinSaving, setPinSaving] = useState(false);
   const [pinMsg, setPinMsg] = useState('');
+  const [liveMsg, setLiveMsg] = useState('');
   const [profile, setProfile] = useState<OrganizerProfile | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [photos, setPhotos] = useState<OrgPhoto[]>([]);
@@ -286,6 +288,18 @@ export default function EventManage() {
     }
   };
 
+  const liveUrl = slug ? liveDisplayUrl(slug) : '';
+
+  const copyLiveUrl = async () => {
+    if (!liveUrl) return;
+    try {
+      await navigator.clipboard.writeText(liveUrl);
+      setLiveMsg('Ссылка для экрана скопирована');
+    } catch {
+      setLiveMsg('Не удалось скопировать');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-paper">
@@ -323,6 +337,34 @@ export default function EventManage() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6">
         {tab === 'gallery' && (
           <div className="space-y-4">
+            {liveUrl ? (
+              <OrganizerSection title="Экран в зале">
+                <p className="text-sm text-muted">
+                  Откройте на телевизоре или проекторе в ресторане — новые фото гостей будут появляться
+                  автоматически. Используйте тот же PIN, что и для гостей.
+                </p>
+                <p className="mt-3 break-all rounded-lg border border-line/60 bg-paper px-3 py-2 font-mono text-xs text-ink">
+                  {liveUrl}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <a
+                    href={liveUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-paper"
+                  >
+                    <Monitor className="h-3.5 w-3.5" />
+                    Открыть экран
+                  </a>
+                  <BtnSecondary onClick={() => void copyLiveUrl()} className="!w-auto">
+                    <Copy className="mr-1 inline h-3.5 w-3.5" />
+                    Копировать ссылку
+                  </BtnSecondary>
+                </div>
+                {liveMsg ? <p className="mt-2 text-xs text-muted">{liveMsg}</p> : null}
+              </OrganizerSection>
+            ) : null}
+
             <div className="flex items-center justify-between">
               <p className="text-[10px] uppercase tracking-[0.2em] text-muted">
                 <Grid3x3 className="mr-1 inline h-3.5 w-3.5" />
@@ -528,18 +570,6 @@ export default function EventManage() {
                 />
               </OrganizerSection>
             )}
-
-            <OrganizerSection
-              title="Цифровое приглашение и RSVP"
-              description="Отдельная страница invite с формой подтверждения присутствия и таблицей ответов."
-            >
-              <Link
-                to={`/dashboard/events/${id}/invite`}
-                className="inline-flex rounded-full border border-line px-4 py-2 text-[10px] uppercase tracking-[0.14em] text-ink"
-              >
-                Открыть invite-панель
-              </Link>
-            </OrganizerSection>
 
             <OrganizerSection
               title="Закрыть приём файлов"

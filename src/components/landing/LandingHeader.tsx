@@ -59,7 +59,7 @@ export default function LandingHeader() {
           ))}
           <Link
             to="/dashboard/login"
-            className="mt-2 text-center bg-ink text-paper py-3 text-xs uppercase tracking-[0.15em]"
+            className="text-center bg-ink text-paper py-3 text-xs uppercase tracking-[0.15em]"
             onClick={() => setOpen(false)}
           >
             Создать мероприятие
