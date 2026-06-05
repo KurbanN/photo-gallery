@@ -9,6 +9,14 @@ export const uploadLimiter = rateLimit({
   message: { error: 'Лимит загрузок с этого устройства. Попробуйте позже.' },
 });
 
+export const seatsSearchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Слишком много попыток поиска. Подождите минуту.' },
+});
+
 function normalizeOrigin(url: string): string {
   return url.trim().replace(/\/+$/, '');
 }

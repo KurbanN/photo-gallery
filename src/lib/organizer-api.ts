@@ -42,6 +42,10 @@ export type EventSettings = {
   loginBgUrl?: string;
   headerSubtitle?: string;
   qrCardVariant?: 'classic' | 'minimal' | 'botanical' | 'noir';
+  seatsEnabled?: boolean;
+  seatsWelcomeMessage?: string;
+  seatsShowTablemates?: boolean;
+  seatsShowSeatNumber?: boolean;
 };
 
 export type EventRow = {
@@ -275,6 +279,158 @@ export async function downloadQr(eventId: string, slug: string): Promise<void> {
   const a = document.createElement('a');
   a.href = url;
   a.download = `qr-${slug}.png`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export type EventGuest = {
+  id: string;
+  eventId: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  tableNumber: string;
+  seatNumber: string | null;
+  phone: string | null;
+  groupName: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type EventGuestInput = {
+  firstName: string;
+  lastName?: string;
+  tableNumber: string;
+  seatNumber?: string | null;
+  phone?: string | null;
+  groupName?: string | null;
+  notes?: string | null;
+};
+
+export function seatsQrUrl(eventId: string): string {
+  return apiUrl(`/api/v1/organizer/events/${eventId}/seats/qr`);
+}
+
+export async function fetchGuestStats(eventId: string): Promise<{ total: number; tables: number }> {
+  const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/guests/stats`), {
+    headers: await authHeaders(),
+  });
+  const body = await parseApiJson<{ total?: number; tables?: number; error?: string }>(res);
+  if (!res.ok) throw new Error(body.error || 'Ошибка');
+  return { total: body.total ?? 0, tables: body.tables ?? 0 };
+}
+
+export async function fetchGuestTables(eventId: string): Promise<string[]> {
+  const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/guests/tables`), {
+    headers: await authHeaders(),
+  });
+  const body = await parseApiJson<{ tables?: string[]; error?: string }>(res);
+  if (!res.ok) throw new Error(body.error || 'Ошибка');
+  return body.tables ?? [];
+}
+
+export async function listGuests(
+  eventId: string,
+  opts: { page?: number; limit?: number; q?: string; table?: string } = {},
+): Promise<{ guests: EventGuest[]; total: number }> {
+  const params = new URLSearchParams();
+  if (opts.page) params.set('page', String(opts.page));
+  if (opts.limit) params.set('limit', String(opts.limit));
+  if (opts.q) params.set('q', opts.q);
+  if (opts.table) params.set('table', opts.table);
+  const qs = params.toString();
+  const res = await fetch(
+    apiUrl(`/api/v1/organizer/events/${eventId}/guests${qs ? `?${qs}` : ''}`),
+    { headers: await authHeaders() },
+  );
+  const body = await parseApiJson<{ guests?: EventGuest[]; total?: number; error?: string }>(res);
+  if (!res.ok) throw new Error(body.error || 'Ошибка');
+  return { guests: body.guests ?? [], total: body.total ?? 0 };
+}
+
+export async function createGuest(eventId: string, input: EventGuestInput): Promise<EventGuest> {
+  const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/guests`), {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify(input),
+  });
+  const body = await parseApiJson<{ guest?: EventGuest; error?: string }>(res);
+  if (!res.ok) throw new Error(body.error || 'Ошибка');
+  if (!body.guest) throw new Error('Нет данных');
+  return body.guest;
+}
+
+export async function updateGuest(
+  eventId: string,
+  guestId: string,
+  input: EventGuestInput,
+): Promise<EventGuest> {
+  const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/guests/${guestId}`), {
+    method: 'PATCH',
+    headers: await authHeaders(),
+    body: JSON.stringify(input),
+  });
+  const body = await parseApiJson<{ guest?: EventGuest; error?: string }>(res);
+  if (!res.ok) throw new Error(body.error || 'Ошибка');
+  if (!body.guest) throw new Error('Нет данных');
+  return body.guest;
+}
+
+export async function deleteGuest(eventId: string, guestId: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/guests/${guestId}`), {
+    method: 'DELETE',
+    headers: await authHeaders(),
+  });
+  const body = await parseApiJson<{ error?: string }>(res);
+  if (!res.ok) throw new Error(body.error || 'Ошибка');
+}
+
+export async function importGuests(
+  eventId: string,
+  guests: EventGuestInput[],
+  mode: 'replace' | 'append',
+): Promise<{ imported: number; skipped?: number; errors?: string[] }> {
+  const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/guests/import`), {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify({ guests, mode }),
+  });
+  const body = await parseApiJson<{
+    imported?: number;
+    skipped?: number;
+    errors?: string[];
+    error?: string;
+  }>(res);
+  if (!res.ok) throw new Error(body.error || 'Ошибка импорта');
+  return { imported: body.imported ?? 0, skipped: body.skipped, errors: body.errors };
+}
+
+export async function exportGuestsCsv(eventId: string, slug: string): Promise<void> {
+  const res = await fetch(apiUrl(`/api/v1/organizer/events/${eventId}/guests/export`), {
+    headers: await authHeaders(),
+  });
+  if (!res.ok) {
+    const body = await parseApiJson<{ error?: string }>(res).catch(() => ({ error: 'Ошибка' }));
+    throw new Error(body.error || 'Ошибка экспорта');
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${slug}-guests.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function downloadSeatsQr(eventId: string, slug: string): Promise<void> {
+  const res = await fetch(seatsQrUrl(eventId), { headers: await authHeaders() });
+  if (!res.ok) throw new Error('QR');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `qr-seats-${slug}.png`;
   a.click();
   URL.revokeObjectURL(url);
 }

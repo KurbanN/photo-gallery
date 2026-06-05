@@ -8,7 +8,13 @@ import {
   getEventBySlug,
   verifyEventPin,
 } from '../events-db.js';
-import { uploadLimiter } from '../middleware.js';
+import { uploadLimiter, seatsSearchLimiter } from '../middleware.js';
+import {
+  countEventGuests,
+  getGuestWithTablemates,
+  readSeatsSettings,
+  searchEventGuestsPublic,
+} from '../guests-db.js';
 import {
   downloadPhotoBuffer,
   listPhotosForGuest,
@@ -182,6 +188,113 @@ export function guestRouter(): Router {
       }
     },
   );
+
+  router.get('/:slug/seats/public', async (req, res) => {
+    try {
+      const event = await getEventBySlug(req.params.slug);
+      if (!event) {
+        res.status(404).json({ error: 'Мероприятие не найдено' });
+        return;
+      }
+      const settings = (event.settings || {}) as EventSettings;
+      const seatSettings = readSeatsSettings(settings);
+      const guestCount = await countEventGuests(event.id);
+      res.json({
+        slug: event.slug,
+        title: event.title,
+        startsAt: event.starts_at,
+        endsAt: event.ends_at,
+        enabled: seatSettings.enabled && guestCount > 0,
+        guestCount,
+        settings: {
+          welcomeTitle: settings.welcomeTitle ?? event.title,
+          welcomeMessage:
+            seatSettings.welcomeMessage ||
+            'Добро пожаловать! Введите имя или фамилию, чтобы найти свой стол.',
+          loginBgUrl: settings.loginBgUrl,
+          showTablemates: seatSettings.showTablemates,
+          showSeatNumber: seatSettings.showSeatNumber,
+        },
+      });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Ошибка сервера' });
+    }
+  });
+
+  router.get('/:slug/seats/search', seatsSearchLimiter, async (req, res) => {
+    try {
+      const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+      if (q.length < 2) {
+        res.status(400).json({ error: 'Введите минимум 2 символа', code: 'QUERY_TOO_SHORT' });
+        return;
+      }
+      const event = await getEventBySlug(req.params.slug);
+      if (!event) {
+        res.status(404).json({ error: 'Мероприятие не найдено' });
+        return;
+      }
+      const seatSettings = readSeatsSettings((event.settings || {}) as EventSettings);
+      if (!seatSettings.enabled) {
+        res.status(404).json({ error: 'Рассадка недоступна' });
+        return;
+      }
+      const guestCount = await countEventGuests(event.id);
+      if (guestCount === 0) {
+        res.json({ results: [], status: 'not_found' as const });
+        return;
+      }
+      const limit = Math.min(8, Number(req.query.limit) || 8);
+      const results = await searchEventGuestsPublic(event.id, q, limit);
+      res.json({
+        results,
+        status: results.length === 0 ? 'not_found' : results.length > 1 ? 'ambiguous' : 'found',
+      });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Ошибка поиска' });
+    }
+  });
+
+  router.get('/:slug/seats/:guestId', seatsSearchLimiter, async (req, res) => {
+    try {
+      const event = await getEventBySlug(req.params.slug);
+      if (!event) {
+        res.status(404).json({ error: 'Мероприятие не найдено' });
+        return;
+      }
+      const seatSettings = readSeatsSettings((event.settings || {}) as EventSettings);
+      if (!seatSettings.enabled) {
+        res.status(404).json({ error: 'Рассадка недоступна' });
+        return;
+      }
+      const data = await getGuestWithTablemates(
+        event.id,
+        req.params.guestId,
+        seatSettings.showTablemates,
+      );
+      if (!data) {
+        res.status(404).json({ error: 'Гость не найден' });
+        return;
+      }
+      const settings = (event.settings || {}) as EventSettings;
+      res.json({
+        guest: data.guest,
+        tablemates: data.tablemates,
+        welcomeMessage:
+          seatSettings.welcomeMessage ||
+          'Приятного вечера!',
+        showSeatNumber: seatSettings.showSeatNumber,
+        albumUrl: `/e/${event.slug}`,
+        settings: {
+          welcomeTitle: settings.welcomeTitle ?? event.title,
+        },
+      });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Ошибка' });
+    }
+  });
 
   return router;
 }

@@ -25,7 +25,20 @@ import {
   uploadEventLoginBg,
 } from '../photos.js';
 import { generatePin } from '../pin.js';
-import type { EventPlan, EventSettings } from '../types.js';
+import type { EventPlan, EventSettings, EventGuestInput } from '../types.js';
+import {
+  countEventGuests,
+  countEventTables,
+  createEventGuest,
+  deleteEventGuest,
+  guestsToCsv,
+  importEventGuests,
+  listAllGuestsForExport,
+  listDistinctTables,
+  listEventGuests,
+  sanitizeGuestInput,
+  updateEventGuest,
+} from '../guests-db.js';
 
 function guestBaseUrl(): string {
   const app = process.env.APP_PUBLIC_URL?.trim();
@@ -304,6 +317,203 @@ export function organizerRouter(): Router {
     } catch (e) {
       console.error(e);
       res.status(500).json({ error: 'QR ошибка' });
+    }
+  });
+
+  router.get('/events/:id/seats/qr', async (req, res) => {
+    try {
+      const org = getOrganizer(req);
+      const event = await getEventById(req.params.id);
+      if (!event || !canAccessEvent(event, org)) {
+        res.status(404).json({ error: 'Не найдено' });
+        return;
+      }
+      const url = `${guestBaseUrl()}/e/${event.slug}/seats`;
+      const png = await QRCode.toBuffer(url, { width: 512, margin: 2 });
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Disposition', `inline; filename="qr-seats-${event.slug}.png"`);
+      res.send(png);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'QR ошибка' });
+    }
+  });
+
+  router.get('/events/:id/guests/stats', async (req, res) => {
+    try {
+      const org = getOrganizer(req);
+      const event = await getEventById(req.params.id);
+      if (!event || !canAccessEvent(event, org)) {
+        res.status(404).json({ error: 'Не найдено' });
+        return;
+      }
+      const [total, tables] = await Promise.all([
+        countEventGuests(event.id),
+        countEventTables(event.id),
+      ]);
+      res.json({ total, tables });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Ошибка' });
+    }
+  });
+
+  router.get('/events/:id/guests/tables', async (req, res) => {
+    try {
+      const org = getOrganizer(req);
+      const event = await getEventById(req.params.id);
+      if (!event || !canAccessEvent(event, org)) {
+        res.status(404).json({ error: 'Не найдено' });
+        return;
+      }
+      const tables = await listDistinctTables(event.id);
+      res.json({ tables });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Ошибка' });
+    }
+  });
+
+  router.get('/events/:id/guests', async (req, res) => {
+    try {
+      const org = getOrganizer(req);
+      const event = await getEventById(req.params.id);
+      if (!event || !canAccessEvent(event, org)) {
+        res.status(404).json({ error: 'Не найдено' });
+        return;
+      }
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 50;
+      const q = typeof req.query.q === 'string' ? req.query.q : undefined;
+      const table = typeof req.query.table === 'string' ? req.query.table : undefined;
+      const data = await listEventGuests(event.id, { page, limit, q, table });
+      res.json(data);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Ошибка списка гостей' });
+    }
+  });
+
+  router.get('/events/:id/guests/export', async (req, res) => {
+    try {
+      const org = getOrganizer(req);
+      const event = await getEventById(req.params.id);
+      if (!event || !canAccessEvent(event, org)) {
+        res.status(404).json({ error: 'Не найдено' });
+        return;
+      }
+      const guests = await listAllGuestsForExport(event.id);
+      const csv = guestsToCsv(guests);
+      const filename = `${event.slug}-guests.csv`;
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      );
+      res.send(csv);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Ошибка экспорта' });
+    }
+  });
+
+  router.post('/events/:id/guests', async (req, res) => {
+    try {
+      const org = getOrganizer(req);
+      const event = await getEventById(req.params.id);
+      if (!event || !canAccessEvent(event, org)) {
+        res.status(404).json({ error: 'Не найдено' });
+        return;
+      }
+      const body = req.body as EventGuestInput;
+      const guest = await createEventGuest(event.id, body);
+      res.status(201).json({ guest });
+    } catch (e) {
+      if (e instanceof Error) {
+        if (e.message === 'FIRST_NAME_REQUIRED') {
+          res.status(400).json({ error: 'Укажите имя гостя' });
+          return;
+        }
+        if (e.message === 'TABLE_REQUIRED') {
+          res.status(400).json({ error: 'Укажите номер стола' });
+          return;
+        }
+      }
+      console.error(e);
+      res.status(500).json({ error: 'Не удалось добавить гостя' });
+    }
+  });
+
+  router.post('/events/:id/guests/import', async (req, res) => {
+    try {
+      const org = getOrganizer(req);
+      const event = await getEventById(req.params.id);
+      if (!event || !canAccessEvent(event, org)) {
+        res.status(404).json({ error: 'Не найдено' });
+        return;
+      }
+      const body = req.body as { guests?: EventGuestInput[]; mode?: 'replace' | 'append' };
+      const guests = body.guests ?? [];
+      const mode = body.mode === 'replace' ? 'replace' : 'append';
+      if (guests.length === 0) {
+        res.status(400).json({ error: 'Список гостей пуст' });
+        return;
+      }
+      const validated: EventGuestInput[] = [];
+      const errors: string[] = [];
+      guests.forEach((g, i) => {
+        try {
+          validated.push(sanitizeGuestInput(g));
+        } catch {
+          errors.push(`Строка ${i + 1}: пропущена (нет имени или стола)`);
+        }
+      });
+      if (validated.length === 0) {
+        res.status(400).json({ error: 'Нет валидных строк для импорта', errors });
+        return;
+      }
+      const result = await importEventGuests(event.id, validated, mode);
+      res.json({ ...result, skipped: guests.length - validated.length, errors });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Ошибка импорта' });
+    }
+  });
+
+  router.patch('/events/:id/guests/:guestId', async (req, res) => {
+    try {
+      const org = getOrganizer(req);
+      const event = await getEventById(req.params.id);
+      if (!event || !canAccessEvent(event, org)) {
+        res.status(404).json({ error: 'Не найдено' });
+        return;
+      }
+      const body = req.body as EventGuestInput;
+      const guest = await updateEventGuest(event.id, req.params.guestId, body);
+      res.json({ guest });
+    } catch (e) {
+      if (e instanceof Error && e.message === 'NOT_FOUND') {
+        res.status(404).json({ error: 'Гость не найден' });
+        return;
+      }
+      console.error(e);
+      res.status(500).json({ error: 'Не удалось обновить' });
+    }
+  });
+
+  router.delete('/events/:id/guests/:guestId', async (req, res) => {
+    try {
+      const org = getOrganizer(req);
+      const event = await getEventById(req.params.id);
+      if (!event || !canAccessEvent(event, org)) {
+        res.status(404).json({ error: 'Не найдено' });
+        return;
+      }
+      await deleteEventGuest(event.id, req.params.guestId);
+      res.json({ ok: true });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Не удалось удалить' });
     }
   });
 

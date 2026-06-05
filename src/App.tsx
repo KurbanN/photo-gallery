@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Landing from '@/pages/Landing';
+import FindMySeat from '@/pages/FindMySeat';
 import GuestEvent from '@/pages/GuestEvent';
 import EventLiveDisplay from '@/pages/EventLiveDisplay';
 import OrganizerLogin from '@/pages/OrganizerLogin';
@@ -16,6 +17,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/e/:slug/live" element={<EventLiveDisplay />} />
+        <Route path="/e/:slug/seats" element={<FindMySeat />} />
         <Route path="/e/:slug" element={<GuestEvent />} />
         <Route path="/dashboard/login" element={<OrganizerLogin />} />
         <Route path="/dashboard" element={<Dashboard />} />

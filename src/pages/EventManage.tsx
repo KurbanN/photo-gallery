@@ -4,6 +4,7 @@ import { Archive, Copy, ExternalLink, Grid3x3, Loader2, Monitor, Trash2, Upload 
 import EventManageTabs, { type EventManageTab } from '@/components/EventManageTabs';
 import GuestLoginPreview from '@/components/GuestLoginPreview';
 import QrPrintCardSection from '@/components/QrPrintCardSection';
+import SeatsManagePanel from '@/components/seats/admin/SeatsManagePanel';
 import {
   BtnPrimary,
   BtnSecondary,
@@ -35,7 +36,7 @@ import {
   type OrganizerProfile,
 } from '@/lib/organizer-api';
 
-const VALID_TABS: EventManageTab[] = ['gallery', 'tools', 'guest'];
+const VALID_TABS: EventManageTab[] = ['gallery', 'seats', 'tools', 'guest'];
 
 function readSettings(raw: EventSettings | undefined, title: string) {
   const s = raw ?? {};
@@ -109,6 +110,7 @@ export default function EventManage() {
   const [bgUploading, setBgUploading] = useState(false);
   const [brandingMsg, setBrandingMsg] = useState('');
   const [qrCardVariant, setQrCardVariant] = useState<QrCardVariant>('classic');
+  const [eventSettings, setEventSettings] = useState<EventSettings>({});
   const [variantSaving, setVariantSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -136,6 +138,7 @@ export default function EventManage() {
       setWelcomeSubtitle(branding.welcomeSubtitle);
       setSavedLoginBgUrl(branding.loginBgUrl);
       setQrCardVariant(branding.qrCardVariant);
+      setEventSettings(event.settings ?? {});
       setPreviewBlobUrl(null);
       setPhotos(await listEventPhotos(id));
       setError('');
@@ -455,6 +458,17 @@ export default function EventManage() {
               </ul>
             )}
           </div>
+        )}
+
+        {tab === 'seats' && (
+          <SeatsManagePanel
+            eventId={id}
+            slug={slug}
+            eventTitle={title}
+            welcomeTitle={welcomeTitle}
+            settings={eventSettings}
+            onSettingsSaved={() => void load()}
+          />
         )}
 
         {tab === 'guest' && (

@@ -1,6 +1,6 @@
-import { Grid3x3, QrCode, Smartphone } from 'lucide-react';
+import { Grid3x3, QrCode, Smartphone, Users } from 'lucide-react';
 
-type TabId = 'guest' | 'gallery' | 'tools';
+type TabId = 'guest' | 'gallery' | 'tools' | 'seats';
 
 const TABS: {
   id: TabId;
@@ -9,6 +9,7 @@ const TABS: {
   Icon: typeof Grid3x3;
 }[] = [
   { id: 'gallery', label: 'Галерея', shortLabel: 'Фото', Icon: Grid3x3 },
+  { id: 'seats', label: 'Рассадка', shortLabel: 'Места', Icon: Users },
   { id: 'tools', label: 'QR и код', shortLabel: 'QR', Icon: QrCode },
   { id: 'guest', label: 'Экран гостя', shortLabel: 'Гость', Icon: Smartphone },
 ];

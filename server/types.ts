@@ -8,6 +8,58 @@ export type EventSettings = {
   loginBgUrl?: string;
   headerSubtitle?: string;
   qrCardVariant?: 'classic' | 'minimal' | 'botanical' | 'noir';
+  seatsEnabled?: boolean;
+  seatsWelcomeMessage?: string;
+  seatsShowTablemates?: boolean;
+  seatsShowSeatNumber?: boolean;
+};
+
+export type EventGuestRow = {
+  id: string;
+  event_id: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  table_number: string;
+  seat_number: string | null;
+  phone: string | null;
+  group_name: string | null;
+  notes: string | null;
+  search_text: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EventGuestInput = {
+  firstName: string;
+  lastName?: string;
+  tableNumber: string;
+  seatNumber?: string | null;
+  phone?: string | null;
+  groupName?: string | null;
+  notes?: string | null;
+};
+
+export type EventGuestPublic = {
+  id: string;
+  fullName: string;
+  tableNumber: string;
+  seatNumber?: string | null;
+};
+
+export type EventGuestView = {
+  id: string;
+  eventId: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  tableNumber: string;
+  seatNumber: string | null;
+  phone: string | null;
+  groupName: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type EventRow = {

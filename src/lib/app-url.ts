@@ -26,3 +26,11 @@ export function liveDisplayUrl(slug: string): string {
 export function guestEventUrl(slug: string): string {
   return absoluteAppUrl(`/e/${encodeURIComponent(slug)}`);
 }
+
+export function findSeatPath(slug: string): string {
+  return appPath(`/e/${encodeURIComponent(slug)}/seats`);
+}
+
+export function findSeatUrl(slug: string): string {
+  return absoluteAppUrl(`/e/${encodeURIComponent(slug)}/seats`);
+}
