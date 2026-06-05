@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Loader2, Search } from 'lucide-react';
 import { ApiRequestError } from '@/lib/api';
@@ -15,20 +15,23 @@ import {
 } from '@/lib/guest-seats-api';
 import { resolveBgUrl } from '@/lib/resolve-bg-url';
 
-type ViewState =
-  | { kind: 'search' }
-  | { kind: 'ambiguous'; results: SeatSearchResult[] }
-  | { kind: 'result'; data: SeatLookupResponse }
-  | { kind: 'not_found' };
+const MIN_QUERY = 2;
+const DEBOUNCE_MS = 280;
 
 export default function FindMySeat() {
   const { slug = '' } = useParams<{ slug: string }>();
   const [meta, setMeta] = useState<SeatsPublic | null>(null);
   const [loadErr, setLoadErr] = useState('');
   const [query, setQuery] = useState('');
-  const [searching, setSearching] = useState(false);
+  const [suggestions, setSuggestions] = useState<SeatSearchResult[]>([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const [searchErr, setSearchErr] = useState('');
-  const [view, setView] = useState<ViewState>({ kind: 'search' });
+  const [result, setResult] = useState<SeatLookupResponse | null>(null);
+  const [picking, setPicking] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const welcomeTitle = meta?.settings.welcomeTitle ?? 'Мероприятие';
   usePageTitle(meta ? `${welcomeTitle} — место` : undefined);
@@ -42,69 +45,97 @@ export default function FindMySeat() {
       .catch((e) => setLoadErr(e instanceof Error ? e.message : 'Не найдено'));
   }, [slug]);
 
-  const runSearch = useCallback(
+  const fetchSuggestions = useCallback(
     async (q: string) => {
       const trimmed = q.trim();
-      if (trimmed.length < 2) {
-        setSearchErr('Введите минимум 2 буквы');
+      if (trimmed.length < MIN_QUERY) {
+        setSuggestions([]);
+        setNotFound(false);
+        setSuggestLoading(false);
         return;
       }
+      setSuggestLoading(true);
       setSearchErr('');
-      setSearching(true);
       try {
-        const { results, status } = await searchSeats(slug, trimmed);
-        if (status === 'found' && results[0]) {
-          const data = await lookupSeat(slug, results[0].id);
-          setView({ kind: 'result', data });
-        } else if (results.length > 1) {
-          setView({ kind: 'ambiguous', results });
-        } else {
-          setView({ kind: 'not_found' });
-        }
+        const { results } = await searchSeats(slug, trimmed);
+        setSuggestions(results);
+        setNotFound(results.length === 0);
       } catch (e) {
+        setSuggestions([]);
         if (e instanceof ApiRequestError && e.status === 429) {
           setSearchErr('Слишком много попыток. Подождите минуту.');
         } else {
           setSearchErr(e instanceof Error ? e.message : 'Ошибка поиска');
         }
       } finally {
-        setSearching(false);
+        setSuggestLoading(false);
       }
     },
     [slug],
   );
 
   useEffect(() => {
-    if (query.trim().length < 2) return;
-    const t = setTimeout(() => {
-      void searchSeats(slug, query.trim())
-        .then(({ results }) => {
-          if (view.kind === 'result') return;
-          if (results.length > 1) setView({ kind: 'ambiguous', results });
-          else if (results.length === 0) setView({ kind: 'search' });
-        })
-        .catch(() => {});
-    }, 350);
-    return () => clearTimeout(t);
-  }, [query, slug, view.kind]);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const trimmed = query.trim();
+    if (trimmed.length < MIN_QUERY) {
+      setSuggestions([]);
+      setNotFound(false);
+      setSuggestLoading(false);
+      return;
+    }
+    setSuggestLoading(true);
+    debounceRef.current = setTimeout(() => {
+      void fetchSuggestions(query);
+    }, DEBOUNCE_MS);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query, fetchSuggestions]);
 
   const pickGuest = async (guestId: string) => {
-    setSearching(true);
+    setPicking(true);
     setSearchErr('');
+    setShowDropdown(false);
     try {
       const data = await lookupSeat(slug, guestId);
-      setView({ kind: 'result', data });
+      setResult(data);
     } catch (e) {
       setSearchErr(e instanceof Error ? e.message : 'Ошибка');
     } finally {
-      setSearching(false);
+      setPicking(false);
     }
   };
 
-  const suggestions = useMemo(() => {
-    if (view.kind !== 'ambiguous') return [];
-    return view.results;
-  }, [view]);
+  const onSubmit = () => {
+    const trimmed = query.trim();
+    if (trimmed.length < MIN_QUERY) {
+      setSearchErr('Введите минимум 2 буквы');
+      return;
+    }
+    if (suggestions.length === 1 && suggestions[0]) {
+      void pickGuest(suggestions[0].id);
+      return;
+    }
+    if (suggestions.length > 1) {
+      setShowDropdown(true);
+      return;
+    }
+    setNotFound(true);
+    setShowDropdown(true);
+  };
+
+  const resetSearch = () => {
+    setResult(null);
+    setQuery('');
+    setSuggestions([]);
+    setNotFound(false);
+    setShowDropdown(false);
+    setSearchErr('');
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const dropdownOpen =
+    showDropdown && query.trim().length >= MIN_QUERY && (suggestLoading || suggestions.length > 0 || notFound);
 
   if (loadErr) {
     return (
@@ -153,30 +184,29 @@ export default function FindMySeat() {
             <p className="mt-1 text-[10px] uppercase tracking-[0.25em] text-muted/80">{dateShort}</p>
           )}
           <h1 className="mt-6 font-serif text-4xl text-ink">Найдите своё место</h1>
-          <p className="mt-3 text-sm leading-relaxed text-muted">
-            {meta.settings.welcomeMessage}
-          </p>
+          <p className="mt-3 text-sm leading-relaxed text-muted">{meta.settings.welcomeMessage}</p>
         </header>
 
-        {view.kind === 'result' ? (
+        {result ? (
           <div className="mt-10 flex flex-1 flex-col">
             <div className="border border-line bg-white/80 p-6 text-center backdrop-blur-sm">
               <p className="text-[10px] uppercase tracking-[0.3em] text-muted">Ваш стол</p>
-              <p className="mt-3 font-serif text-6xl text-ink">{view.data.guest.tableNumber}</p>
-              {view.data.showSeatNumber && view.data.guest.seatNumber && (
+              <p className="mt-3 font-serif text-6xl text-ink">{result.guest.tableNumber}</p>
+              {result.showSeatNumber && result.guest.seatNumber && (
                 <p className="mt-4 text-sm text-muted">
-                  Место <span className="font-serif text-lg text-ink">{view.data.guest.seatNumber}</span>
+                  Место{' '}
+                  <span className="font-serif text-lg text-ink">{result.guest.seatNumber}</span>
                 </p>
               )}
-              <p className="mt-6 font-medium text-ink">{view.data.guest.fullName}</p>
-              <p className="mt-4 text-sm text-muted">{view.data.welcomeMessage}</p>
+              <p className="mt-6 font-medium text-ink">{result.guest.fullName}</p>
+              <p className="mt-4 text-sm text-muted">{result.welcomeMessage}</p>
             </div>
 
-            {view.data.tablemates.length > 0 && (
+            {result.tablemates.length > 0 && (
               <div className="mt-6 border border-line bg-white/60 p-4">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-muted">За вашим столом</p>
                 <ul className="mt-3 space-y-1 text-sm text-ink">
-                  {view.data.tablemates.map((m) => (
+                  {result.tablemates.map((m) => (
                     <li key={m.id}>{m.fullName}</li>
                   ))}
                 </ul>
@@ -186,10 +216,7 @@ export default function FindMySeat() {
             <button
               type="button"
               className="mt-6 text-center text-xs uppercase tracking-[0.2em] text-muted underline-offset-4 hover:underline"
-              onClick={() => {
-                setView({ kind: 'search' });
-                setQuery('');
-              }}
+              onClick={resetSearch}
             >
               Искать снова
             </button>
@@ -199,61 +226,93 @@ export default function FindMySeat() {
             <label className="block">
               <span className="sr-only">Имя или фамилия</span>
               <div className="relative">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted" />
                 <input
-                  className="w-full border border-line bg-white py-4 pl-11 pr-4 text-base text-ink outline-none focus:border-ink"
+                  ref={inputRef}
+                  className={`relative z-10 w-full border bg-white py-4 pl-11 pr-4 text-base text-ink outline-none focus:border-ink ${
+                    dropdownOpen ? 'border-ink border-b-0' : 'border-line'
+                  }`}
                   placeholder="Имя или фамилия"
                   value={query}
                   onChange={(e) => {
                     setQuery(e.target.value);
-                    setView({ kind: 'search' });
+                    setShowDropdown(true);
+                    setNotFound(false);
                     setSearchErr('');
                   }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') void runSearch(query);
+                  onFocus={() => {
+                    if (query.trim().length >= MIN_QUERY) setShowDropdown(true);
                   }}
-                  autoComplete="name"
+                  onBlur={() => {
+                    setTimeout(() => setShowDropdown(false), 180);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') onSubmit();
+                  }}
+                  autoComplete="off"
                   autoCorrect="off"
+                  spellCheck={false}
                   inputMode="search"
+                  role="combobox"
+                  aria-expanded={dropdownOpen}
+                  aria-autocomplete="list"
                 />
+
+                {dropdownOpen && (
+                  <ul
+                    className="absolute left-0 right-0 top-full z-20 max-h-64 overflow-y-auto border border-t-0 border-ink bg-white shadow-sm"
+                    role="listbox"
+                  >
+                    {suggestLoading && (
+                      <li className="flex items-center gap-2 px-4 py-3 text-sm text-muted">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Поиск…
+                      </li>
+                    )}
+
+                    {!suggestLoading && notFound && (
+                      <li className="px-4 py-3 text-sm leading-relaxed text-muted">
+                        Никого не нашли. Проверьте написание или спросите организатора.
+                      </li>
+                    )}
+
+                    {!suggestLoading &&
+                      suggestions.map((s) => (
+                        <li key={s.id} role="option">
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-paper active:bg-paper"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => void pickGuest(s.id)}
+                          >
+                            <span className="font-medium text-ink">{s.fullName}</span>
+                            <span className="ml-3 shrink-0 text-sm text-muted">Стол {s.tableNumber}</span>
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                )}
               </div>
             </label>
 
             {searchErr && <p className="mt-3 text-center text-sm text-red-700">{searchErr}</p>}
 
-            {view.kind === 'not_found' && (
-              <p className="mt-6 text-center text-sm leading-relaxed text-muted">
+            {!dropdownOpen && notFound && query.trim().length >= MIN_QUERY && !suggestLoading && (
+              <p className="mt-4 text-center text-sm leading-relaxed text-muted">
                 Мы не нашли гостя с таким именем. Проверьте написание или обратитесь к организатору.
               </p>
             )}
 
-            {suggestions.length > 0 && (
-              <ul className="mt-4 divide-y divide-line border border-line bg-white">
-                {suggestions.map((s) => (
-                  <li key={s.id}>
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between px-4 py-4 text-left hover:bg-paper"
-                      onClick={() => void pickGuest(s.id)}
-                    >
-                      <span className="font-medium text-ink">{s.fullName}</span>
-                      <span className="text-sm text-muted">Стол {s.tableNumber}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
             <button
               type="button"
-              disabled={searching || query.trim().length < 2}
-              onClick={() => void runSearch(query)}
+              disabled={picking || query.trim().length < MIN_QUERY}
+              onClick={onSubmit}
               className="mx-auto mt-auto w-full max-w-sm rounded-full bg-ink py-4 text-xs font-semibold uppercase tracking-[0.3em] text-paper disabled:opacity-50"
             >
-              {searching ? (
+              {picking ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Поиск…
+                  Загрузка…
                 </span>
               ) : (
                 'Найти'
